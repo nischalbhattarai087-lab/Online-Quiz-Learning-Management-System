@@ -22,7 +22,13 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+
+    # Users app — registration, login, logout, profile, etc.
+    # include('users.urls', namespace='users') mounts the app's urlpatterns
+    # under the /accounts/ prefix AND registers the 'users' namespace.
+    # e.g. /accounts/register/  →  users:register
+    path('accounts/', include('users.urls', namespace='users')),
+
     # Simple home route using base.html template
     path('', TemplateView.as_view(template_name='base.html'), name='home'),
 ]

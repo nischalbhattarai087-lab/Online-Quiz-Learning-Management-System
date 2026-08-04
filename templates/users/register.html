@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+{# ──────────────────────────────────────────────────────────────────────────
+   templates/users/register.html
+
+   Why extend base.html?
+   - Inherits the navbar, footer, CSS design system, and Google Fonts.
+   - We only define the blocks that need to change: title, meta, content.
+   ────────────────────────────────────────────────────────────────────────── #}
+
+{% block title %}Create Account — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  Sign up for LMS Portal to access courses, quizzes, and learning tools.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Page layout ─────────────────────────────────────────────────────── */
+  .auth-wrapper {
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+  }
+
+  /* ── Card ────────────────────────────────────────────────────────────── */
+  .auth-card {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(27, 30, 48, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 2.75rem 2.5rem;
+    /* Glassmorphism */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(99, 102, 241, 0.08);
+    animation: slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Card header ─────────────────────────────────────────────────────── */
+  .auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .auth-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    font-size: 1.6rem;
+    color: #fff;
+    margin-bottom: 1rem;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
+  }
+
+  .auth-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+  }
+
+  .auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  /* ── Flash messages ───────────────────────────────────────────────────── */
+  .messages-list {
+    list-style: none;
+    margin-bottom: 1.25rem;
+  }
+
+  .message {
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .message.success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
+  .message.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+  }
+
+  /* ── Form rows ───────────────────────────────────────────────────────── */
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    .form-row { grid-template-columns: 1fr; }
+    .auth-card { padding: 2rem 1.5rem; }
+  }
+
+  /* ── Field group ─────────────────────────────────────────────────────── */
+  .field-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .field-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.45rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Input styling ───────────────────────────────────────────────────── */
+  .field-group input {
+    width: 100%;
+    background: rgba(10, 11, 16, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    transition: var(--transition-smooth);
+    outline: none;
+  }
+
+  .field-group input:focus {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.06);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  }
+
+  .field-group input.is-invalid {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+  }
+
+  /* ── Inline field errors ─────────────────────────────────────────────── */
+  .field-errors {
+    list-style: none;
+    margin-top: 0.4rem;
+  }
+
+  .field-errors li {
+    font-size: 0.82rem;
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* ── Password strength bar ───────────────────────────────────────────── */
+  .strength-bar-wrap {
+    margin-top: 0.5rem;
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .strength-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    transition: width 0.4s ease, background-color 0.4s ease;
+  }
+
+  .strength-label {
+    font-size: 0.78rem;
+    margin-top: 0.3rem;
+    color: var(--text-muted);
+    min-height: 1em;
+  }
+
+  /* ── Submit button ───────────────────────────────────────────────────── */
+  .btn-submit {
+    width: 100%;
+    padding: 0.85rem;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(99, 102, 241, 0.5);
+  }
+
+  .btn-submit:active {
+    transform: translateY(0);
+  }
+
+  /* ── Footer link ─────────────────────────────────────────────────────── */
+  .auth-footer-note {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .auth-footer-note a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+  }
+
+  .auth-footer-note a:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+  }
+
+  /* ── Role badge ──────────────────────────────────────────────────────── */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+{# ── Remove base.html's default main padding so we can centre properly ── #}
+<div class="auth-wrapper" id="register-page">
+  <div class="auth-card" role="main">
+
+    {# ── Card header ──────────────────────────────────────────────────── #}
+    <div class="auth-header">
+      <div class="auth-icon" aria-hidden="true">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">Join thousands of learners on LMS Portal</p>
+    </div>
+
+    {# ── Role badge — tells the user what role they'll get ──────────── #}
+    <div style="text-align:center;">
+      <span class="role-badge" id="role-indicator">
+        <i class="fa-solid fa-graduation-cap"></i>
+        Registering as: Student
+      </span>
+    </div>
+
+    {# ── Django flash messages (success / error from the view) ─────── #}
+    {# messages is populated by messages.success() / messages.error() in the view. #}
+    {% if messages %}
+      <ul class="messages-list" role="alert" aria-live="polite">
+        {% for message in messages %}
+          <li class="message {{ message.tags }}" id="msg-{{ forloop.counter }}">
+            {% if message.tags == 'success' %}
+              <i class="fa-solid fa-circle-check"></i>
+            {% else %}
+              <i class="fa-solid fa-circle-exclamation"></i>
+            {% endif %}
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ── Registration form ─────────────────────────────────────────── #}
+    {# method="post" — required so Django sees the data in request.POST. #}
+    {# {% csrf_token %} — MANDATORY. Django rejects any POST without it.  #}
+    <form method="post"
+          action="{% url 'users:register' %}"
+          id="registration-form"
+          novalidate>
+      {# novalidate disables browser HTML5 validation so Django's errors
+         are always shown — giving a consistent UX. #}
+
+      {% csrf_token %}
+
+      {# ── Row 1: First name + Last name ──────────────────────────── #}
+      <div class="form-row">
+        {# First name #}
+        <div class="field-group">
+          {{ form.first_name.label_tag }}
+          {# Render the raw <input> widget. If there are errors, add is-invalid class. #}
+          <input type="text"
+                 name="{{ form.first_name.html_name }}"
+                 id="{{ form.first_name.id_for_label }}"
+                 placeholder="First name"
+                 autocomplete="given-name"
+                 value="{{ form.first_name.value|default:'' }}"
+                 {% if form.first_name.errors %}class="is-invalid"{% endif %}
+                 aria-describedby="err-first_name"
+                 required>
+          {% if form.first_name.errors %}
+            <ul class="field-errors" id="err-first_name" role="alert">
+              {% for error in form.first_name.errors %}
+                <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+
+        {# Last name #}
+        <div class="field-group">
+          {{ form.last_name.label_tag }}
+          <input type="text"
+                 name="{{ form.last_name.html_name }}"
+                 id="{{ form.last_name.id_for_label }}"
+                 placeholder="Last name"
+                 autocomplete="family-name"
+                 value="{{ form.last_name.value|default:'' }}"
+                 {% if form.last_name.errors %}class="is-invalid"{% endif %}
+                 aria-describedby="err-last_name"
+                 required>
+          {% if form.last_name.errors %}
+            <ul class="field-errors" id="err-last_name" role="alert">
+              {% for error in form.last_name.errors %}
+                <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Username ────────────────────────────────────────────────── #}
+      <div class="field-group">
+        {{ form.username.label_tag }}
+        <input type="text"
+               name="{{ form.username.html_name }}"
+               id="{{ form.username.id_for_label }}"
+               placeholder="Choose a unique username"
+               autocomplete="username"
+               value="{{ form.username.value|default:'' }}"
+               {% if form.username.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-username"
+               maxlength="150"
+               required>
+        {% if form.username.errors %}
+          <ul class="field-errors" id="err-username" role="alert">
+            {% for error in form.username.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Email ───────────────────────────────────────────────────── #}
+      <div class="field-group">
+        {{ form.email.label_tag }}
+        <input type="email"
+               name="{{ form.email.html_name }}"
+               id="{{ form.email.id_for_label }}"
+               placeholder="you@example.com"
+               autocomplete="email"
+               value="{{ form.email.value|default:'' }}"
+               {% if form.email.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-email"
+               required>
+        {% if form.email.errors %}
+          <ul class="field-errors" id="err-email" role="alert">
+            {% for error in form.email.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Password ─────────────────────────────────────────────────── #}
+      <div class="field-group">
+        {{ form.password1.label_tag }}
+        <input type="password"
+               name="{{ form.password1.html_name }}"
+               id="{{ form.password1.id_for_label }}"
+               placeholder="Create a strong password"
+               autocomplete="new-password"
+               {% if form.password1.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-password1 strength-label"
+               required>
+        {# Live password strength bar — driven by JS below #}
+        <div class="strength-bar-wrap" aria-hidden="true">
+          <div class="strength-bar" id="strength-bar"></div>
+        </div>
+        <p class="strength-label" id="strength-label"></p>
+        {% if form.password1.errors %}
+          <ul class="field-errors" id="err-password1" role="alert">
+            {% for error in form.password1.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Confirm Password ─────────────────────────────────────────── #}
+      <div class="field-group">
+        {{ form.password2.label_tag }}
+        <input type="password"
+               name="{{ form.password2.html_name }}"
+               id="{{ form.password2.id_for_label }}"
+               placeholder="Repeat your password"
+               autocomplete="new-password"
+               {% if form.password2.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-password2"
+               required>
+        {% if form.password2.errors %}
+          <ul class="field-errors" id="err-password2" role="alert">
+            {% for error in form.password2.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Non-field errors (e.g. passwords don't match) ─────────────── #}
+      {# form.non_field_errors() contains errors not tied to a specific field. #}
+      {% if form.non_field_errors %}
+        <ul class="field-errors" style="margin-bottom:1rem;" role="alert">
+          {% for error in form.non_field_errors %}
+            <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {# ── Submit ──────────────────────────────────────────────────── #}
+      <button type="submit" class="btn-submit" id="btn-register">
+        <i class="fa-solid fa-rocket" style="margin-right:0.4rem;"></i>
+        Create My Account
+      </button>
+
+    </form>
+
+    {# ── Footer note: already have an account? ────────────────────── #}
+    <p class="auth-footer-note">
+      Already have an account?
+      {# When login is built, change '#' to {% url 'users:login' %} #}
+      <a href="#" id="link-to-login">Sign in</a>
+    </p>
+
+  </div>{# /.auth-card #}
+</div>{# /.auth-wrapper #}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+/**
+ * Client-side password strength meter.
+ *
+ * This is purely a UX enhancement — it gives visual feedback as the user
+ * types. It does NOT replace server-side validation; Django still enforces
+ * AUTH_PASSWORD_VALIDATORS on the server.
+ */
+(function () {
+  const pwInput    = document.getElementById('{{ form.password1.id_for_label }}');
+  const bar        = document.getElementById('strength-bar');
+  const label      = document.getElementById('strength-label');
+
+  if (!pwInput || !bar || !label) return;
+
+  /**
+   * Score the password on a 0-4 scale based on simple heuristics.
+   * (A production app could use zxcvbn for a better score.)
+   */
+  function score(pw) {
+    let s = 0;
+    if (pw.length >= 8)  s++;
+    if (pw.length >= 12) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    return Math.min(s, 4);
+  }
+
+  const levels = [
+    { pct: '0%',   color: 'transparent',                         text: '' },
+    { pct: '25%',  color: '#ef4444',                              text: 'Weak' },
+    { pct: '50%',  color: '#f59e0b',                              text: 'Fair' },
+    { pct: '75%',  color: '#3b82f6',                              text: 'Good' },
+    { pct: '100%', color: 'var(--accent)',                        text: 'Strong ✓' },
+  ];
+
+  pwInput.addEventListener('input', function () {
+    const s = this.value.length === 0 ? 0 : Math.max(score(this.value), 1);
+    const lvl = levels[s];
+    bar.style.width           = lvl.pct;
+    bar.style.backgroundColor = lvl.color;
+    label.textContent         = lvl.text;
+    label.style.color         = lvl.color;
+  });
+})();
+</script>
+{% endblock %}
