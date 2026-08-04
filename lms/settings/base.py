@@ -106,3 +106,15 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ------------------------------------------------------------------
+# Custom User model
+# ------------------------------------------------------------------
+# Tell Django to use users.User instead of auth.User throughout the
+# entire project — for authentication, permissions, ForeignKey lookups,
+# the admin, etc.
+# Format: '<app_label>.<ModelName>'
+# IMPORTANT: this MUST be defined before running the very first migration.
+# Changing it later on an existing database is a complex, manual migration.
+AUTH_USER_MODEL = 'users.User'
+
