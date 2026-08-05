@@ -1,9 +1,4 @@
 {% extends "base.html" %}
-{# ──────────────────────────────────────────────────────────────────────────
-   templates/users/teacher_dashboard.html
-
-   Accessible only to users with role = 'teacher'.
-   ────────────────────────────────────────────────────────────────────────── #}
 
 {% block title %}Teacher Dashboard — LMS Portal{% endblock %}
 
@@ -38,7 +33,6 @@
     padding: 0.25rem 0.7rem; border-radius: 99px; margin-top: 0.35rem;
   }
 
-  /* ── Stats grid ─────────────────────────────────────────────────────── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -73,7 +67,6 @@
 
   .stat-label { color: var(--text-secondary); font-size: 0.85rem; }
 
-  /* ── Quick-action buttons ───────────────────────────────────────────── */
   .actions-row {
     display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem;
   }
@@ -137,7 +130,6 @@
 
 {% block content %}
 
-{# ── Flash messages ──────────────────────────────────────────────────────── #}
 {% if messages %}
   <ul class="messages-list" role="alert" aria-live="polite">
     {% for message in messages %}
@@ -148,7 +140,6 @@
   </ul>
 {% endif %}
 
-{# ── Dashboard header ──────────────────────────────────────────────────── #}
 <div class="dash-header" id="teacher-dashboard-header">
   <div class="dash-avatar" aria-hidden="true">
     {% if user.profile_picture %}
@@ -169,7 +160,6 @@
   </div>
 </div>
 
-{# ── Quick actions ──────────────────────────────────────────────────────── #}
 <div class="actions-row" id="teacher-quick-actions">
   <a href="#" class="action-btn primary" id="btn-create-course">
     <i class="fa-solid fa-plus"></i> Create Course
@@ -182,7 +172,6 @@
   </a>
 </div>
 
-{# ── Stats ─────────────────────────────────────────────────────────────── #}
 <div class="stats-grid" id="teacher-stats">
   <div class="stat-card">
     <div class="stat-icon"><i class="fa-solid fa-chalkboard"></i></div>
@@ -206,7 +195,6 @@
   </div>
 </div>
 
-{# ── My Courses ─────────────────────────────────────────────────────────── #}
 <h2 class="section-title">
   <i class="fa-solid fa-layer-group" style="color:#a855f7"></i>
   My Courses

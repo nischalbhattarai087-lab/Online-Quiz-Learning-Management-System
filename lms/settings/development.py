@@ -21,3 +21,14 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# ------------------------------------------------------------------
+# Email Configuration (Development Environment)
+# ------------------------------------------------------------------
+# In development, we use console.EmailBackend so sent password-reset
+# emails are printed directly into standard output (terminal stdout).
+# This allows testing the entire password reset flow without setting up
+# a real SMTP mail server.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'LMS Portal <noreply@lmsportal.com>'
+

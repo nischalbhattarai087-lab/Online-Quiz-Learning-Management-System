@@ -1,11 +1,4 @@
 {% extends "base.html" %}
-{# ──────────────────────────────────────────────────────────────────────────
-   templates/users/register.html
-
-   Why extend base.html?
-   - Inherits the navbar, footer, CSS design system, and Google Fonts.
-   - We only define the blocks that need to change: title, meta, content.
-   ────────────────────────────────────────────────────────────────────────── #}
 
 {% block title %}Create Account — LMS Portal{% endblock %}
 
@@ -15,7 +8,6 @@
 
 {% block extra_css %}
 <style>
-  /* ── Page layout ─────────────────────────────────────────────────────── */
   .auth-wrapper {
     min-height: calc(100vh - 140px);
     display: flex;
@@ -24,7 +16,6 @@
     padding: 3rem 1rem;
   }
 
-  /* ── Card ────────────────────────────────────────────────────────────── */
   .auth-card {
     width: 100%;
     max-width: 520px;
@@ -32,7 +23,6 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px;
     padding: 2.75rem 2.5rem;
-    /* Glassmorphism */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5),
@@ -45,7 +35,6 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── Card header ─────────────────────────────────────────────────────── */
   .auth-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -78,7 +67,6 @@
     font-size: 0.95rem;
   }
 
-  /* ── Flash messages ───────────────────────────────────────────────────── */
   .messages-list {
     list-style: none;
     margin-bottom: 1.25rem;
@@ -112,7 +100,6 @@
     color: #f87171;
   }
 
-  /* ── Form rows ───────────────────────────────────────────────────────── */
   .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -124,7 +111,6 @@
     .auth-card { padding: 2rem 1.5rem; }
   }
 
-  /* ── Field group ─────────────────────────────────────────────────────── */
   .field-group {
     margin-bottom: 1.25rem;
   }
@@ -138,7 +124,6 @@
     letter-spacing: 0.02em;
   }
 
-  /* ── Input styling ───────────────────────────────────────────────────── */
   .field-group input {
     width: 100%;
     background: rgba(10, 11, 16, 0.6);
@@ -163,7 +148,6 @@
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
   }
 
-  /* ── Inline field errors ─────────────────────────────────────────────── */
   .field-errors {
     list-style: none;
     margin-top: 0.4rem;
@@ -177,7 +161,6 @@
     gap: 0.3rem;
   }
 
-  /* ── Password strength bar ───────────────────────────────────────────── */
   .strength-bar-wrap {
     margin-top: 0.5rem;
     height: 4px;
@@ -200,7 +183,6 @@
     min-height: 1em;
   }
 
-  /* ── Submit button ───────────────────────────────────────────────────── */
   .btn-submit {
     width: 100%;
     padding: 0.85rem;
@@ -229,7 +211,6 @@
     transform: translateY(0);
   }
 
-  /* ── Footer link ─────────────────────────────────────────────────────── */
   .auth-footer-note {
     text-align: center;
     margin-top: 1.5rem;
@@ -249,7 +230,6 @@
     text-decoration: underline;
   }
 
-  /* ── Role badge ──────────────────────────────────────────────────────── */
   .role-badge {
     display: inline-flex;
     align-items: center;
@@ -268,11 +248,9 @@
 
 
 {% block content %}
-{# ── Remove base.html's default main padding so we can centre properly ── #}
 <div class="auth-wrapper" id="register-page">
   <div class="auth-card" role="main">
 
-    {# ── Card header ──────────────────────────────────────────────────── #}
     <div class="auth-header">
       <div class="auth-icon" aria-hidden="true">
         <i class="fa-solid fa-user-plus"></i>
@@ -281,7 +259,6 @@
       <p class="auth-subtitle">Join thousands of learners on LMS Portal</p>
     </div>
 
-    {# ── Role badge — tells the user what role they'll get ──────────── #}
     <div style="text-align:center;">
       <span class="role-badge" id="role-indicator">
         <i class="fa-solid fa-graduation-cap"></i>
@@ -289,8 +266,6 @@
       </span>
     </div>
 
-    {# ── Django flash messages (success / error from the view) ─────── #}
-    {# messages is populated by messages.success() / messages.error() in the view. #}
     {% if messages %}
       <ul class="messages-list" role="alert" aria-live="polite">
         {% for message in messages %}
@@ -306,24 +281,15 @@
       </ul>
     {% endif %}
 
-    {# ── Registration form ─────────────────────────────────────────── #}
-    {# method="post" — required so Django sees the data in request.POST. #}
-    {# {% csrf_token %} — MANDATORY. Django rejects any POST without it.  #}
     <form method="post"
           action="{% url 'users:register' %}"
           id="registration-form"
           novalidate>
-      {# novalidate disables browser HTML5 validation so Django's errors
-         are always shown — giving a consistent UX. #}
-
       {% csrf_token %}
 
-      {# ── Row 1: First name + Last name ──────────────────────────── #}
       <div class="form-row">
-        {# First name #}
         <div class="field-group">
           {{ form.first_name.label_tag }}
-          {# Render the raw <input> widget. If there are errors, add is-invalid class. #}
           <input type="text"
                  name="{{ form.first_name.html_name }}"
                  id="{{ form.first_name.id_for_label }}"
@@ -342,7 +308,6 @@
           {% endif %}
         </div>
 
-        {# Last name #}
         <div class="field-group">
           {{ form.last_name.label_tag }}
           <input type="text"
@@ -364,7 +329,6 @@
         </div>
       </div>
 
-      {# ── Username ────────────────────────────────────────────────── #}
       <div class="field-group">
         {{ form.username.label_tag }}
         <input type="text"
@@ -386,7 +350,6 @@
         {% endif %}
       </div>
 
-      {# ── Email ───────────────────────────────────────────────────── #}
       <div class="field-group">
         {{ form.email.label_tag }}
         <input type="email"
@@ -407,7 +370,6 @@
         {% endif %}
       </div>
 
-      {# ── Password ─────────────────────────────────────────────────── #}
       <div class="field-group">
         {{ form.password1.label_tag }}
         <input type="password"
@@ -418,7 +380,6 @@
                {% if form.password1.errors %}class="is-invalid"{% endif %}
                aria-describedby="err-password1 strength-label"
                required>
-        {# Live password strength bar — driven by JS below #}
         <div class="strength-bar-wrap" aria-hidden="true">
           <div class="strength-bar" id="strength-bar"></div>
         </div>
@@ -432,7 +393,6 @@
         {% endif %}
       </div>
 
-      {# ── Confirm Password ─────────────────────────────────────────── #}
       <div class="field-group">
         {{ form.password2.label_tag }}
         <input type="password"
@@ -452,8 +412,6 @@
         {% endif %}
       </div>
 
-      {# ── Non-field errors (e.g. passwords don't match) ─────────────── #}
-      {# form.non_field_errors() contains errors not tied to a specific field. #}
       {% if form.non_field_errors %}
         <ul class="field-errors" style="margin-bottom:1rem;" role="alert">
           {% for error in form.non_field_errors %}
@@ -462,7 +420,6 @@
         </ul>
       {% endif %}
 
-      {# ── Submit ──────────────────────────────────────────────────── #}
       <button type="submit" class="btn-submit" id="btn-register">
         <i class="fa-solid fa-rocket" style="margin-right:0.4rem;"></i>
         Create My Account
@@ -470,38 +427,25 @@
 
     </form>
 
-    {# ── Footer note: already have an account? ────────────────────── #}
     <p class="auth-footer-note">
       Already have an account?
-      {# When login is built, change '#' to {% url 'users:login' %} #}
-      <a href="#" id="link-to-login">Sign in</a>
+      <a href="{% url 'users:login' %}" id="link-to-login">Sign in</a>
     </p>
 
-  </div>{# /.auth-card #}
-</div>{# /.auth-wrapper #}
+  </div>
+</div>
 {% endblock %}
 
 
 {% block extra_js %}
 <script>
-/**
- * Client-side password strength meter.
- *
- * This is purely a UX enhancement — it gives visual feedback as the user
- * types. It does NOT replace server-side validation; Django still enforces
- * AUTH_PASSWORD_VALIDATORS on the server.
- */
 (function () {
-  const pwInput    = document.getElementById('{{ form.password1.id_for_label }}');
-  const bar        = document.getElementById('strength-bar');
-  const label      = document.getElementById('strength-label');
+  const pwInput = document.getElementById('{{ form.password1.id_for_label }}');
+  const bar     = document.getElementById('strength-bar');
+  const label   = document.getElementById('strength-label');
 
   if (!pwInput || !bar || !label) return;
 
-  /**
-   * Score the password on a 0-4 scale based on simple heuristics.
-   * (A production app could use zxcvbn for a better score.)
-   */
   function score(pw) {
     let s = 0;
     if (pw.length >= 8)  s++;
@@ -513,15 +457,15 @@
   }
 
   const levels = [
-    { pct: '0%',   color: 'transparent',                         text: '' },
-    { pct: '25%',  color: '#ef4444',                              text: 'Weak' },
-    { pct: '50%',  color: '#f59e0b',                              text: 'Fair' },
-    { pct: '75%',  color: '#3b82f6',                              text: 'Good' },
-    { pct: '100%', color: 'var(--accent)',                        text: 'Strong ✓' },
+    { pct: '0%',   color: 'transparent', text: '' },
+    { pct: '25%',  color: '#ef4444',     text: 'Weak' },
+    { pct: '50%',  color: '#f59e0b',     text: 'Fair' },
+    { pct: '75%',  color: '#3b82f6',     text: 'Good' },
+    { pct: '100%', color: 'var(--accent)', text: 'Strong ✓' },
   ];
 
   pwInput.addEventListener('input', function () {
-    const s = this.value.length === 0 ? 0 : Math.max(score(this.value), 1);
+    const s   = this.value.length === 0 ? 0 : Math.max(score(this.value), 1);
     const lvl = levels[s];
     bar.style.width           = lvl.pct;
     bar.style.backgroundColor = lvl.color;

@@ -1,11 +1,4 @@
 {% extends "base.html" %}
-{# ──────────────────────────────────────────────────────────────────────────
-   templates/users/student_dashboard.html
-
-   Accessible only to users with role = 'student'.
-   The @role_required('student') decorator on the view ensures no other
-   role can reach this template — they are redirected before the view runs.
-   ────────────────────────────────────────────────────────────────────────── #}
 
 {% block title %}Student Dashboard — LMS Portal{% endblock %}
 
@@ -15,7 +8,6 @@
 
 {% block extra_css %}
 <style>
-  /* ── Dashboard layout ──────────────────────────────────────────────── */
   .dash-header {
     margin-bottom: 2.5rem;
     padding-bottom: 1.5rem;
@@ -52,7 +44,6 @@
     margin-top: 0.35rem;
   }
 
-  /* ── Stats grid ────────────────────────────────────────────────────── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -93,7 +84,6 @@
 
   .stat-label { color: var(--text-secondary); font-size: 0.85rem; }
 
-  /* ── Section heading ───────────────────────────────────────────────── */
   .section-title {
     font-size: 1.15rem; font-weight: 600;
     color: var(--text-primary);
@@ -101,7 +91,6 @@
     display: flex; align-items: center; gap: 0.6rem;
   }
 
-  /* ── Placeholder card (coming soon) ────────────────────────────────── */
   .coming-soon {
     background: var(--bg-secondary);
     border: 1px dashed rgba(255,255,255,.08);
@@ -112,7 +101,6 @@
   .coming-soon i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
   .coming-soon p { font-size: 0.9rem; }
 
-  /* ── Flash messages ───────────────────────────────────────────────── */
   .messages-list { list-style: none; margin-bottom: 1.5rem; }
 
   .message {
@@ -135,7 +123,6 @@
 
 {% block content %}
 
-{# ── Flash messages ──────────────────────────────────────────────────────── #}
 {% if messages %}
   <ul class="messages-list" role="alert" aria-live="polite">
     {% for message in messages %}
@@ -146,10 +133,8 @@
   </ul>
 {% endif %}
 
-{# ── Dashboard header ──────────────────────────────────────────────────── #}
 <div class="dash-header" id="student-dashboard-header">
   <div class="dash-avatar" aria-hidden="true">
-    {# Show initials if no profile picture #}
     {% if user.profile_picture %}
       <img src="{{ user.profile_picture.url }}"
            alt="{{ user.full_name }}"
@@ -168,7 +153,6 @@
   </div>
 </div>
 
-{# ── Stats ─────────────────────────────────────────────────────────────── #}
 <div class="stats-grid" id="student-stats">
   <div class="stat-card">
     <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
@@ -192,7 +176,6 @@
   </div>
 </div>
 
-{# ── Recent Courses ─────────────────────────────────────────────────────── #}
 <h2 class="section-title">
   <i class="fa-solid fa-layer-group" style="color:var(--primary)"></i>
   My Courses
@@ -202,7 +185,6 @@
   <p>You haven't enrolled in any courses yet. Browse the catalogue to get started.</p>
 </div>
 
-{# ── Recent Quiz Attempts ───────────────────────────────────────────────── #}
 <h2 class="section-title" style="margin-top:2rem;">
   <i class="fa-solid fa-clipboard-question" style="color:var(--secondary)"></i>
   Recent Quiz Attempts

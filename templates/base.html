@@ -157,6 +157,30 @@
             display: none !important;
         }
 
+        .logout-form {
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+
+        .logout-btn {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            background: rgba(239, 68, 68, 0.15) !important;
+            color: #f87171 !important;
+            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+            box-shadow: none !important;
+            transition: var(--transition-smooth);
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.25) !important;
+            color: #ef4444 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important;
+        }
+
         /* Main Content Container */
         main {
             flex: 1;
@@ -276,7 +300,6 @@
                 <li><a href="#" id="link-courses">Courses</a></li>
                 <li><a href="#" id="link-quizzes">Quizzes</a></li>
                 {% if user.is_authenticated %}
-                    {# Show the correct dashboard link based on the user's role #}
                     {% if user.role == 'student' %}
                         <li><a href="{% url 'users:student_dashboard' %}" id="link-dashboard">My Dashboard</a></li>
                     {% elif user.role == 'teacher' %}
@@ -284,8 +307,15 @@
                     {% elif user.role == 'admin' %}
                         <li><a href="/admin/" id="link-dashboard">Admin Panel</a></li>
                     {% endif %}
-                    {# Logout placeholder — will be wired in the next step #}
-                    <li><a href="#" class="nav-btn" id="link-logout">Sign Out</a></li>
+                    <li><a href="{% url 'users:profile' %}" id="link-profile">My Profile</a></li>
+                    <li>
+                        <form method="post" action="{% url 'users:logout' %}" class="logout-form" id="logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="nav-btn logout-btn" id="link-logout">
+                                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                            </button>
+                        </form>
+                    </li>
                 {% else %}
                     <li><a href="{% url 'users:login' %}" id="link-login">Sign In</a></li>
                     <li><a href="{% url 'users:register' %}" class="nav-btn" id="link-get-started">Get Started</a></li>

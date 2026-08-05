@@ -131,6 +131,9 @@ LOGIN_URL = '/accounts/login/'
 # reads it behaves consistently.
 LOGIN_REDIRECT_URL = '/'
 
+# LOGOUT_REDIRECT_URL: where Django redirects after logging out.
+LOGOUT_REDIRECT_URL = '/'
+
 # ------------------------------------------------------------------
 # Session / Remember Me settings
 # ------------------------------------------------------------------

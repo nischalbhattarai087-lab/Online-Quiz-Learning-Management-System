@@ -1,10 +1,4 @@
 {% extends "base.html" %}
-{# ──────────────────────────────────────────────────────────────────────────
-   templates/users/login.html
-
-   Extends the shared base layout (navbar, footer, design tokens).
-   Only the title, meta description, CSS block, and main content change.
-   ────────────────────────────────────────────────────────────────────────── #}
 
 {% block title %}Sign In — LMS Portal{% endblock %}
 
@@ -14,7 +8,6 @@
 
 {% block extra_css %}
 <style>
-  /* ── Page wrapper ─────────────────────────────────────────────────── */
   .auth-wrapper {
     min-height: calc(100vh - 140px);
     display: flex;
@@ -23,7 +16,6 @@
     padding: 3rem 1rem;
   }
 
-  /* ── Glass card ───────────────────────────────────────────────────── */
   .auth-card {
     width: 100%;
     max-width: 460px;
@@ -43,7 +35,6 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ── Header ───────────────────────────────────────────────────────── */
   .auth-header { text-align: center; margin-bottom: 2rem; }
 
   .auth-icon {
@@ -66,7 +57,6 @@
 
   .auth-subtitle { color: var(--text-secondary); font-size: 0.95rem; }
 
-  /* ── Flash messages ───────────────────────────────────────────────── */
   .messages-list { list-style: none; margin-bottom: 1.25rem; }
 
   .message {
@@ -85,16 +75,17 @@
     background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3);
     color: #34d399;
   }
+
   .message.error, .message.warning {
     background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
     color: #f87171;
   }
+
   .message.warning {
     background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25);
     color: #fbbf24;
   }
 
-  /* ── Field group ──────────────────────────────────────────────────── */
   .field-group { margin-bottom: 1.25rem; }
 
   .field-group label {
@@ -126,7 +117,6 @@
     box-shadow: 0 0 0 3px rgba(239,68,68,.12);
   }
 
-  /* ── Field errors ─────────────────────────────────────────────────── */
   .field-errors { list-style: none; margin-top: 0.4rem; }
 
   .field-errors li {
@@ -134,11 +124,21 @@
     display: flex; align-items: center; gap: 0.3rem;
   }
 
-  /* ── Remember Me row ──────────────────────────────────────────────── */
   .remember-row {
-    display: flex; align-items: center; gap: 0.6rem;
-    margin-bottom: 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; gap: 0.5rem; flex-wrap: wrap;
   }
+
+  .remember-left {
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+
+  .forgot-link {
+    font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: 500;
+    transition: var(--transition-smooth);
+  }
+
+  .forgot-link:hover { color: var(--secondary); text-decoration: underline; }
 
   .remember-row input[type="checkbox"] {
     width: 16px; height: 16px;
@@ -152,7 +152,6 @@
     user-select: none;
   }
 
-  /* ── Submit button ────────────────────────────────────────────────── */
   .btn-submit {
     width: 100%; padding: 0.85rem; border: none; border-radius: 10px;
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
@@ -169,7 +168,6 @@
 
   .btn-submit:active { transform: translateY(0); }
 
-  /* ── Footer note ──────────────────────────────────────────────────── */
   .auth-footer-note {
     text-align: center; margin-top: 1.5rem;
     font-size: 0.9rem; color: var(--text-secondary);
@@ -191,7 +189,6 @@
 <div class="auth-wrapper" id="login-page">
   <div class="auth-card" role="main">
 
-    {# ── Header ─────────────────────────────────────────────────────── #}
     <div class="auth-header">
       <div class="auth-icon" aria-hidden="true">
         <i class="fa-solid fa-right-to-bracket"></i>
@@ -200,9 +197,6 @@
       <p class="auth-subtitle">Sign in to continue to LMS Portal</p>
     </div>
 
-    {# ── Flash messages ──────────────────────────────────────────────── #}
-    {# The messages framework is populated by views.py (messages.success / error)
-       and also by our decorator (messages.warning when access is denied). #}
     {% if messages %}
       <ul class="messages-list" role="alert" aria-live="polite">
         {% for message in messages %}
@@ -220,8 +214,6 @@
       </ul>
     {% endif %}
 
-    {# ── Non-field errors (invalid credentials, inactive account) ────── #}
-    {# These come from LoginForm.clean() raising ValidationError. #}
     {% if form.non_field_errors %}
       <ul class="field-errors" style="margin-bottom:1rem;" role="alert">
         {% for error in form.non_field_errors %}
@@ -232,20 +224,16 @@
       </ul>
     {% endif %}
 
-    {# ── Login form ──────────────────────────────────────────────────── #}
-    {# action includes ?next= if Django's @login_required set it. #}
     <form method="post"
           action="{% url 'users:login' %}{% if next %}?next={{ next }}{% endif %}"
           id="login-form"
           novalidate>
       {% csrf_token %}
 
-      {# Hidden next field so the view can read it from POST data too. #}
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}">
       {% endif %}
 
-      {# ── Username ──────────────────────────────────────────────────── #}
       <div class="field-group">
         <label for="id_login_username">Username</label>
         <input type="text"
@@ -266,7 +254,6 @@
         {% endif %}
       </div>
 
-      {# ── Password ──────────────────────────────────────────────────── #}
       <div class="field-group">
         <label for="id_login_password">Password</label>
         <input type="password"
@@ -286,18 +273,19 @@
         {% endif %}
       </div>
 
-      {# ── Remember Me ───────────────────────────────────────────────── #}
-      {# BooleanField — unchecked → False (session cookie, expires on browser close)
-                        checked  → True  (persistent cookie, 14 days per settings) #}
       <div class="remember-row">
-        <input type="checkbox"
-               name="remember_me"
-               id="id_remember_me"
-               {% if form.remember_me.value %}checked{% endif %}>
-        <label for="id_remember_me">Keep me signed in for 14 days</label>
+        <div class="remember-left">
+          <input type="checkbox"
+                 name="remember_me"
+                 id="id_remember_me"
+                 {% if form.remember_me.value %}checked{% endif %}>
+          <label for="id_remember_me">Keep me signed in</label>
+        </div>
+        <a href="{% url 'users:password_reset' %}" class="forgot-link" id="link-forgot-password">
+          Forgot password?
+        </a>
       </div>
 
-      {# ── Submit ────────────────────────────────────────────────────── #}
       <button type="submit" class="btn-submit" id="btn-login">
         <i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:0.4rem;"></i>
         Sign In
@@ -305,12 +293,11 @@
 
     </form>
 
-    {# ── Footer note ──────────────────────────────────────────────────── #}
     <p class="auth-footer-note">
       New to LMS Portal?
       <a href="{% url 'users:register' %}" id="link-to-register">Create an account</a>
     </p>
 
-  </div>{# /.auth-card #}
-</div>{# /.auth-wrapper #}
+  </div>
+</div>
 {% endblock %}

@@ -16,7 +16,7 @@ Login flow in detail:
 """
 
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -191,7 +191,42 @@ class UserLoginView(View):
 
 
 # =============================================================================
-# 3. StudentDashboardView
+# 3. UserLogoutView
+# =============================================================================
+
+class UserLogoutView(View):
+    """
+    Handles user logout and session teardown.
+
+    Security & Implementation details:
+    1. Django's logout(request) function:
+       - Flushes the session data completely from the database/storage backend.
+       - Deletes the session cookie from the user's browser.
+       - Clears request.user, replacing it with an AnonymousUser instance.
+       - Cycles the session key to protect against session fixation attacks.
+
+    2. HTTP Method Strategy:
+       - POST: The primary and secure HTTP method for logging out (prevents CSRF
+         attacks from external <img> tags or links trying to force logouts).
+       - GET: Handled gracefully for direct URL navigation, ensuring users are
+         logged out and redirected to home with feedback without crashing.
+    """
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+            messages.success(request, 'You have been logged out successfully.')
+        return redirect('home')
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+            messages.success(request, 'You have been logged out successfully.')
+        return redirect('home')
+
+
+# =============================================================================
+# 4. StudentDashboardView
 # =============================================================================
 
 @method_decorator(role_required(User.Role.STUDENT), name='dispatch')
@@ -233,6 +268,39 @@ class TeacherDashboardView(View):
         context = {
             'user': request.user,
             'page_title': 'Teacher Dashboard',
+        }
+        return render(request, self.template_name, context)
+
+
+# =============================================================================
+# 5. UserProfileView
+# =============================================================================
+
+@method_decorator(login_required_custom, name='dispatch')
+class UserProfileView(View):
+    """
+    User Profile View — displays user account details.
+
+    Access Control:
+    - Protected by @method_decorator(login_required_custom, name='dispatch').
+    - Unauthenticated requests are intercepted and redirected to /accounts/login/
+      with a warning flash message ("You must be logged in to access that page.").
+
+    Displayed Data:
+    - Profile picture (or avatar initials fallback)
+    - Username
+    - Email address
+    - First name & Last name
+    - System Role (Student / Teacher / Admin)
+    - Date joined timestamp
+    """
+
+    template_name = 'users/profile.html'
+
+    def get(self, request):
+        context = {
+            'user': request.user,
+            'page_title': 'My Profile',
         }
         return render(request, self.template_name, context)
 

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  View and manage your LMS Portal profile details.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .profile-card {
+    background: rgba(27, 30, 48, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 2.5rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.4);
+    margin-bottom: 2rem;
+  }
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .profile-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .profile-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .profile-identity h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+  }
+
+  .profile-identity p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.3rem 0.85rem;
+    border-radius: 99px;
+    margin-top: 0.6rem;
+    text-transform: capitalize;
+  }
+
+  .role-badge.student {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+  }
+
+  .role-badge.teacher {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: #c084fc;
+  }
+
+  .role-badge.admin {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+  }
+
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 640px) {
+    .profile-header { flex-direction: column; text-align: center; }
+    .details-grid { grid-template-columns: 1fr; }
+  }
+
+  .detail-box {
+    background: rgba(10, 11, 16, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    transition: var(--transition-smooth);
+  }
+
+  .detail-box:hover {
+    border-color: rgba(99, 102, 241, 0.2);
+    background: rgba(10, 11, 16, 0.7);
+  }
+
+  .detail-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .detail-value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-word;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="profile-container" id="user-profile-page">
+
+  <div class="profile-card">
+
+    <div class="profile-header">
+      <div class="profile-avatar-large" id="profile-avatar">
+        {% if user.profile_picture %}
+          <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}">
+        {% else %}
+          {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+        {% endif %}
+      </div>
+
+      <div class="profile-identity">
+        <h1>{{ user.full_name }}</h1>
+        <p>@{{ user.username }}</p>
+
+        <span class="role-badge {{ user.role }}" id="user-role-badge">
+          {% if user.role == 'student' %}
+            <i class="fa-solid fa-graduation-cap"></i> Student
+          {% elif user.role == 'teacher' %}
+            <i class="fa-solid fa-chalkboard-user"></i> Teacher
+          {% elif user.role == 'admin' %}
+            <i class="fa-solid fa-user-shield"></i> Administrator
+          {% else %}
+            <i class="fa-solid fa-user"></i> {{ user.get_role_display }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="details-grid">
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-user-tag"></i> First Name</div>
+        <div class="detail-value" id="val-first-name">{{ user.first_name|default:"—" }}</div>
+      </div>
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-user-tag"></i> Last Name</div>
+        <div class="detail-value" id="val-last-name">{{ user.last_name|default:"—" }}</div>
+      </div>
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-envelope"></i> Email Address</div>
+        <div class="detail-value" id="val-email">{{ user.email }}</div>
+      </div>
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-at"></i> Username</div>
+        <div class="detail-value" id="val-username">{{ user.username }}</div>
+      </div>
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-shield-halved"></i> Platform Role</div>
+        <div class="detail-value" id="val-role">{{ user.get_role_display }}</div>
+      </div>
+
+      <div class="detail-box">
+        <div class="detail-label"><i class="fa-solid fa-calendar-check"></i> Date Joined</div>
+        <div class="detail-value" id="val-date-joined">{{ user.date_joined|date:"F j, Y (H:i T)" }}</div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
