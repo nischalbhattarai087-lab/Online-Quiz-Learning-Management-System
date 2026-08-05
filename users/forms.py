@@ -1,15 +1,18 @@
 """
 users/forms.py
 
-Why use Django Forms?
-- They centralise validation logic in ONE place (not scattered across views).
-- They handle CSRF protection, field rendering, and error message generation.
-- They integrate with Django's password validators defined in settings.py.
-- Using UserCreationForm as the base means we inherit the two-password
-  comparison ("password1 must equal password2") check for free.
+Contains two forms:
+  1. UserRegistrationForm — student self-registration.
+  2. LoginForm           — username + password + Remember Me.
+
+Why use Django Forms for login (instead of writing raw POST handling)?
+- Centralised validation with automatic error binding to fields.
+- Clean separation: the form validates credentials; the view acts on them.
+- authenticate() is called INSIDE the form's clean() so the view stays thin.
 """
 
 from django import forms
+from django.contrib.auth import authenticate
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -185,3 +188,130 @@ class UserRegistrationForm(UserCreationForm):
             user.save()  # now writes to DB
 
         return user
+
+
+# =============================================================================
+# LoginForm
+# =============================================================================
+
+class LoginForm(forms.Form):
+    """
+    Login form — validates credentials and stores the authenticated User
+    object on self.user_cache so the view can call login() without
+    repeating the authenticate() call.
+
+    Why NOT inherit AuthenticationForm (Django's built-in)?
+    - AuthenticationForm is tightly coupled to request objects and has
+      subtleties around inactive-account handling that differ per project.
+    - Writing our own gives full control over field labels, error messages,
+      and the Remember Me checkbox while keeping the logic transparent.
+
+    Flow:
+      1. User submits username + password.
+      2. clean() calls authenticate(request, username=…, password=…).
+         authenticate() iterates AUTHENTICATION_BACKENDS (default: ModelBackend)
+         which looks up the user by username and verifies the hashed password.
+      3. If authenticate() returns None → wrong credentials → ValidationError.
+      4. If authenticate() returns a User but is_active is False → locked account.
+      5. On success, self.user_cache holds the authenticated User instance.
+      6. The view calls form.get_user() and then login(request, user).
+    """
+
+    # ------------------------------------------------------------------
+    # Fields
+    # ------------------------------------------------------------------
+
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'id': 'id_login_username',
+            'placeholder': 'Your username',
+            'autocomplete': 'username',
+        }),
+        label='Username',
+    )
+
+    password = forms.CharField(
+        required=True,
+        # strip=False — preserve spaces the user intentionally typed
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'id': 'id_login_password',
+            'placeholder': 'Your password',
+            'autocomplete': 'current-password',
+        }),
+        label='Password',
+    )
+
+    remember_me = forms.BooleanField(
+        required=False,      # BooleanField is required=False by default; unchecked = False
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'id': 'id_remember_me',
+        }),
+        label='Keep me signed in',
+    )
+
+    # ------------------------------------------------------------------
+    # Cross-field validation: clean()
+    # ------------------------------------------------------------------
+    # clean() runs AFTER all individual clean_<field>() methods succeed.
+    # This is the right place for checks that involve multiple fields
+    # (here: username + password together).
+
+    def clean(self):
+        """
+        Authenticate the user. Attach the user object to self.user_cache
+        if successful; raise ValidationError otherwise.
+
+        Non-field errors raised here are accessible in the template via
+        {{ form.non_field_errors }} — they appear at the top of the form,
+        not attached to a specific input.
+        """
+        # super().clean() collects all cleaned individual fields first.
+        cleaned = super().clean()
+
+        username = cleaned.get('username')
+        password = cleaned.get('password')
+
+        # Only attempt authentication if both fields passed individual validation.
+        if username and password:
+            # authenticate() returns a User object on success, None on failure.
+            # It also handles the AUTHENTICATION_BACKENDS pipeline.
+            # We pass `request` so backends that need it (e.g. rate limiters) work.
+            self.user_cache = authenticate(
+                request=self.request if hasattr(self, 'request') else None,
+                username=username,
+                password=password,
+            )
+
+            if self.user_cache is None:
+                # authenticate() returned None: either wrong username or wrong password.
+                # We give a GENERIC message intentionally — a specific message like
+                # "username not found" would let attackers enumerate valid usernames.
+                raise ValidationError(
+                    'Invalid username or password. Please try again.',
+                    code='invalid_credentials',
+                )
+
+            if not self.user_cache.is_active:
+                # The account exists but is deactivated (e.g. banned by admin).
+                raise ValidationError(
+                    'Your account has been deactivated. '
+                    'Please contact support.',
+                    code='inactive',
+                )
+
+        return cleaned
+
+    # ------------------------------------------------------------------
+    # Helper: expose the authenticated user to the view
+    # ------------------------------------------------------------------
+    def get_user(self):
+        """
+        Return the authenticated user object after is_valid() succeeds.
+        Raises AttributeError if called before is_valid() — intentional.
+        """
+        return self.user_cache
+

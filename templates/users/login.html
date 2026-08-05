@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{# ──────────────────────────────────────────────────────────────────────────
+   templates/users/login.html
+
+   Extends the shared base layout (navbar, footer, design tokens).
+   Only the title, meta description, CSS block, and main content change.
+   ────────────────────────────────────────────────────────────────────────── #}
+
+{% block title %}Sign In — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  Sign in to LMS Portal to access your courses, quizzes, and dashboard.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Page wrapper ─────────────────────────────────────────────────── */
+  .auth-wrapper {
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+  }
+
+  /* ── Glass card ───────────────────────────────────────────────────── */
+  .auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: rgba(27, 30, 48, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 2.75rem 2.5rem;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(99, 102, 241, 0.08);
+    animation: slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Header ───────────────────────────────────────────────────────── */
+  .auth-header { text-align: center; margin-bottom: 2rem; }
+
+  .auth-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    font-size: 1.6rem; color: #fff;
+    margin-bottom: 1rem;
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35);
+  }
+
+  .auth-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.75rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.35rem;
+  }
+
+  .auth-subtitle { color: var(--text-secondary); font-size: 0.95rem; }
+
+  /* ── Flash messages ───────────────────────────────────────────────── */
+  .messages-list { list-style: none; margin-bottom: 1.25rem; }
+
+  .message {
+    padding: 0.8rem 1rem; border-radius: 10px;
+    font-size: 0.9rem; margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.6rem;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .message.success {
+    background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3);
+    color: #34d399;
+  }
+  .message.error, .message.warning {
+    background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.25);
+    color: #f87171;
+  }
+  .message.warning {
+    background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25);
+    color: #fbbf24;
+  }
+
+  /* ── Field group ──────────────────────────────────────────────────── */
+  .field-group { margin-bottom: 1.25rem; }
+
+  .field-group label {
+    display: block; font-size: 0.85rem; font-weight: 500;
+    color: var(--text-secondary); margin-bottom: 0.45rem;
+    letter-spacing: 0.02em;
+  }
+
+  .field-group input[type="text"],
+  .field-group input[type="password"] {
+    width: 100%;
+    background: rgba(10,11,16,.6);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif; font-size: 0.95rem;
+    transition: var(--transition-smooth); outline: none;
+  }
+
+  .field-group input:focus {
+    border-color: var(--primary);
+    background: rgba(99,102,241,.06);
+    box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+  }
+
+  .field-group input.is-invalid {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px rgba(239,68,68,.12);
+  }
+
+  /* ── Field errors ─────────────────────────────────────────────────── */
+  .field-errors { list-style: none; margin-top: 0.4rem; }
+
+  .field-errors li {
+    font-size: 0.82rem; color: #f87171;
+    display: flex; align-items: center; gap: 0.3rem;
+  }
+
+  /* ── Remember Me row ──────────────────────────────────────────────── */
+  .remember-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .remember-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .remember-row label {
+    color: var(--text-secondary);
+    font-size: 0.9rem; cursor: pointer;
+    user-select: none;
+  }
+
+  /* ── Submit button ────────────────────────────────────────────────── */
+  .btn-submit {
+    width: 100%; padding: 0.85rem; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: #fff; font-family: 'Outfit', sans-serif;
+    font-size: 1rem; font-weight: 600; letter-spacing: 0.02em;
+    cursor: pointer; transition: var(--transition-smooth);
+    box-shadow: 0 4px 18px rgba(99,102,241,.35);
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(99,102,241,.5);
+  }
+
+  .btn-submit:active { transform: translateY(0); }
+
+  /* ── Footer note ──────────────────────────────────────────────────── */
+  .auth-footer-note {
+    text-align: center; margin-top: 1.5rem;
+    font-size: 0.9rem; color: var(--text-secondary);
+  }
+
+  .auth-footer-note a {
+    color: var(--primary); text-decoration: none;
+    font-weight: 500; transition: var(--transition-smooth);
+  }
+
+  .auth-footer-note a:hover { color: var(--secondary); text-decoration: underline; }
+
+  @media (max-width: 480px) { .auth-card { padding: 2rem 1.5rem; } }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="auth-wrapper" id="login-page">
+  <div class="auth-card" role="main">
+
+    {# ── Header ─────────────────────────────────────────────────────── #}
+    <div class="auth-header">
+      <div class="auth-icon" aria-hidden="true">
+        <i class="fa-solid fa-right-to-bracket"></i>
+      </div>
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-subtitle">Sign in to continue to LMS Portal</p>
+    </div>
+
+    {# ── Flash messages ──────────────────────────────────────────────── #}
+    {# The messages framework is populated by views.py (messages.success / error)
+       and also by our decorator (messages.warning when access is denied). #}
+    {% if messages %}
+      <ul class="messages-list" role="alert" aria-live="polite">
+        {% for message in messages %}
+          <li class="message {{ message.tags }}" id="msg-{{ forloop.counter }}">
+            {% if 'success' in message.tags %}
+              <i class="fa-solid fa-circle-check"></i>
+            {% elif 'warning' in message.tags %}
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            {% else %}
+              <i class="fa-solid fa-circle-exclamation"></i>
+            {% endif %}
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ── Non-field errors (invalid credentials, inactive account) ────── #}
+    {# These come from LoginForm.clean() raising ValidationError. #}
+    {% if form.non_field_errors %}
+      <ul class="field-errors" style="margin-bottom:1rem;" role="alert">
+        {% for error in form.non_field_errors %}
+          <li>
+            <i class="fa-solid fa-lock"></i> {{ error }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ── Login form ──────────────────────────────────────────────────── #}
+    {# action includes ?next= if Django's @login_required set it. #}
+    <form method="post"
+          action="{% url 'users:login' %}{% if next %}?next={{ next }}{% endif %}"
+          id="login-form"
+          novalidate>
+      {% csrf_token %}
+
+      {# Hidden next field so the view can read it from POST data too. #}
+      {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
+
+      {# ── Username ──────────────────────────────────────────────────── #}
+      <div class="field-group">
+        <label for="id_login_username">Username</label>
+        <input type="text"
+               name="username"
+               id="id_login_username"
+               placeholder="Your username"
+               autocomplete="username"
+               value="{{ form.username.value|default:'' }}"
+               {% if form.username.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-username"
+               required>
+        {% if form.username.errors %}
+          <ul class="field-errors" id="err-username" role="alert">
+            {% for error in form.username.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Password ──────────────────────────────────────────────────── #}
+      <div class="field-group">
+        <label for="id_login_password">Password</label>
+        <input type="password"
+               name="password"
+               id="id_login_password"
+               placeholder="Your password"
+               autocomplete="current-password"
+               {% if form.password.errors %}class="is-invalid"{% endif %}
+               aria-describedby="err-password"
+               required>
+        {% if form.password.errors %}
+          <ul class="field-errors" id="err-password" role="alert">
+            {% for error in form.password.errors %}
+              <li><i class="fa-solid fa-triangle-exclamation"></i> {{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+
+      {# ── Remember Me ───────────────────────────────────────────────── #}
+      {# BooleanField — unchecked → False (session cookie, expires on browser close)
+                        checked  → True  (persistent cookie, 14 days per settings) #}
+      <div class="remember-row">
+        <input type="checkbox"
+               name="remember_me"
+               id="id_remember_me"
+               {% if form.remember_me.value %}checked{% endif %}>
+        <label for="id_remember_me">Keep me signed in for 14 days</label>
+      </div>
+
+      {# ── Submit ────────────────────────────────────────────────────── #}
+      <button type="submit" class="btn-submit" id="btn-login">
+        <i class="fa-solid fa-arrow-right-to-bracket" style="margin-right:0.4rem;"></i>
+        Sign In
+      </button>
+
+    </form>
+
+    {# ── Footer note ──────────────────────────────────────────────────── #}
+    <p class="auth-footer-note">
+      New to LMS Portal?
+      <a href="{% url 'users:register' %}" id="link-to-register">Create an account</a>
+    </p>
+
+  </div>{# /.auth-card #}
+</div>{# /.auth-wrapper #}
+{% endblock %}

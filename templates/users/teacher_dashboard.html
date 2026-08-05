@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{# ──────────────────────────────────────────────────────────────────────────
+   templates/users/teacher_dashboard.html
+
+   Accessible only to users with role = 'teacher'.
+   ────────────────────────────────────────────────────────────────────────── #}
+
+{% block title %}Teacher Dashboard — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  Manage your courses, create quizzes, and track student performance.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dash-header {
+    margin-bottom: 2.5rem; padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 1.25rem;
+  }
+
+  .dash-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: #fff;
+    font-family: 'Outfit', sans-serif; font-weight: 700;
+    box-shadow: 0 4px 20px rgba(168,85,247,.4); flex-shrink: 0;
+  }
+
+  .dash-greeting h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
+  .dash-greeting p  { color: var(--text-secondary); font-size: 0.95rem; }
+
+  .role-pill {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: rgba(168,85,247,.12); border: 1px solid rgba(168,85,247,.25);
+    color: #c084fc; font-size: 0.78rem; font-weight: 600;
+    padding: 0.25rem 0.7rem; border-radius: 99px; margin-top: 0.35rem;
+  }
+
+  /* ── Stats grid ─────────────────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem; margin-bottom: 2.5rem;
+  }
+
+  .stat-card {
+    background: var(--bg-secondary); border: 1px solid var(--border-color);
+    border-radius: 14px; padding: 1.5rem;
+    transition: var(--transition-smooth); position: relative; overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #a855f7, #6366f1);
+    opacity: 0; transition: var(--transition-smooth);
+  }
+
+  .stat-card:hover { transform: translateY(-3px); border-color: rgba(168,85,247,.25); }
+  .stat-card:hover::before { opacity: 1; }
+
+  .stat-icon {
+    font-size: 1.6rem; margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .stat-value {
+    font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 0.2rem;
+  }
+
+  .stat-label { color: var(--text-secondary); font-size: 0.85rem; }
+
+  /* ── Quick-action buttons ───────────────────────────────────────────── */
+  .actions-row {
+    display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2.5rem;
+  }
+
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.7rem 1.25rem; border-radius: 10px; border: none;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 500;
+    cursor: pointer; transition: var(--transition-smooth); text-decoration: none;
+  }
+
+  .action-btn.primary {
+    background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff;
+    box-shadow: 0 4px 14px rgba(168,85,247,.35);
+  }
+
+  .action-btn.primary:hover {
+    transform: translateY(-2px); box-shadow: 0 6px 20px rgba(168,85,247,.5);
+  }
+
+  .action-btn.ghost {
+    background: var(--bg-tertiary); color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .action-btn.ghost:hover { border-color: rgba(168,85,247,.4); color: #c084fc; }
+
+  .section-title {
+    font-size: 1.15rem; font-weight: 600; color: var(--text-primary);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem;
+  }
+
+  .coming-soon {
+    background: var(--bg-secondary); border: 1px dashed rgba(255,255,255,.08);
+    border-radius: 14px; padding: 3rem; text-align: center; color: var(--text-muted);
+  }
+
+  .coming-soon i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+  .coming-soon p { font-size: 0.9rem; }
+
+  .messages-list { list-style: none; margin-bottom: 1.5rem; }
+
+  .message {
+    padding: 0.8rem 1rem; border-radius: 10px; font-size: 0.9rem;
+    margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.6rem;
+  }
+
+  .message.success {
+    background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3);
+    color: #34d399;
+  }
+
+  @media (max-width: 600px) {
+    .dash-header { flex-direction: column; align-items: flex-start; }
+    .actions-row { flex-direction: column; }
+    .action-btn  { justify-content: center; }
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+{# ── Flash messages ──────────────────────────────────────────────────────── #}
+{% if messages %}
+  <ul class="messages-list" role="alert" aria-live="polite">
+    {% for message in messages %}
+      <li class="message {{ message.tags }}" id="msg-{{ forloop.counter }}">
+        <i class="fa-solid fa-circle-check"></i> {{ message }}
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{# ── Dashboard header ──────────────────────────────────────────────────── #}
+<div class="dash-header" id="teacher-dashboard-header">
+  <div class="dash-avatar" aria-hidden="true">
+    {% if user.profile_picture %}
+      <img src="{{ user.profile_picture.url }}"
+           alt="{{ user.full_name }}"
+           style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+    {% else %}
+      {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+    {% endif %}
+  </div>
+  <div class="dash-greeting">
+    <h1>Hello, {{ user.first_name|default:user.username }}! 🎓</h1>
+    <p>Manage your courses and track your students' progress.</p>
+    <span class="role-pill">
+      <i class="fa-solid fa-chalkboard-teacher"></i>
+      {{ user.get_role_display }}
+    </span>
+  </div>
+</div>
+
+{# ── Quick actions ──────────────────────────────────────────────────────── #}
+<div class="actions-row" id="teacher-quick-actions">
+  <a href="#" class="action-btn primary" id="btn-create-course">
+    <i class="fa-solid fa-plus"></i> Create Course
+  </a>
+  <a href="#" class="action-btn ghost" id="btn-create-quiz">
+    <i class="fa-solid fa-file-pen"></i> New Quiz
+  </a>
+  <a href="#" class="action-btn ghost" id="btn-view-students">
+    <i class="fa-solid fa-users"></i> View Students
+  </a>
+</div>
+
+{# ── Stats ─────────────────────────────────────────────────────────────── #}
+<div class="stats-grid" id="teacher-stats">
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fa-solid fa-chalkboard"></i></div>
+    <div class="stat-value">0</div>
+    <div class="stat-label">Active Courses</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+    <div class="stat-value">0</div>
+    <div class="stat-label">Total Students</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+    <div class="stat-value">0</div>
+    <div class="stat-label">Quizzes Published</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+    <div class="stat-value">—</div>
+    <div class="stat-label">Avg. Student Score</div>
+  </div>
+</div>
+
+{# ── My Courses ─────────────────────────────────────────────────────────── #}
+<h2 class="section-title">
+  <i class="fa-solid fa-layer-group" style="color:#a855f7"></i>
+  My Courses
+</h2>
+<div class="coming-soon" id="teacher-courses-placeholder">
+  <i class="fa-solid fa-book" style="color:var(--text-muted)"></i>
+  <p>You haven't created any courses yet. Click <strong>Create Course</strong> to begin.</p>
+</div>
+
+{% endblock %}

@@ -118,3 +118,33 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Changing it later on an existing database is a complex, manual migration.
 AUTH_USER_MODEL = 'users.User'
 
+# ------------------------------------------------------------------
+# Login / Logout redirect settings
+# ------------------------------------------------------------------
+# LOGIN_URL: where Django's @login_required sends unauthenticated users.
+# Using the named URL 'users:login' means if the /accounts/ prefix ever
+# changes, this setting still resolves correctly.
+LOGIN_URL = '/accounts/login/'
+
+# LOGIN_REDIRECT_URL is used by Django's built-in LoginView (not ours),
+# but it is good practice to define it so any third-party package that
+# reads it behaves consistently.
+LOGIN_REDIRECT_URL = '/'
+
+# ------------------------------------------------------------------
+# Session / Remember Me settings
+# ------------------------------------------------------------------
+# SESSION_COOKIE_AGE: lifetime (in seconds) of a persistent session cookie.
+# Default is 1209600 (2 weeks).  We keep the default.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # 14 days
+
+# SESSION_EXPIRE_AT_BROWSER_CLOSE: when True, sessions expire on browser
+# close regardless of SESSION_COOKIE_AGE.  We set False so that
+# "Remember Me" (which calls request.session.set_expiry(None)) works.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# SESSION_COOKIE_HTTPONLY: prevents JavaScript from accessing the cookie.
+# Always True in production — reduces XSS attack surface.
+SESSION_COOKIE_HTTPONLY = True
+
+

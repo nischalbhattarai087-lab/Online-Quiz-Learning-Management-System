@@ -1,20 +1,36 @@
 """
 users/views.py
 
-Why a class-based view (FormView) instead of a function-based view?
-- FormView handles the GET/POST branching automatically.
-- GET  → renders the empty form.
-- POST → validates the form; re-renders on failure, redirects on success.
-- It is DRY: no manual `if request.method == 'POST'` boilerplate.
-- It is easy to extend (override get_form_kwargs, form_valid, etc.).
+Contains four views:
+  1. RegisterView         — student self-registration (built in previous step)
+  2. UserLoginView        — authenticates + logs in; role-based redirect
+  3. StudentDashboardView — protected: only students
+  4. TeacherDashboardView — protected: only teachers
+
+Login flow in detail:
+  GET  /accounts/login/  → render empty LoginForm
+  POST /accounts/login/  → form.is_valid() calls authenticate() internally
+                           → on success: login(request, user) creates session
+                           → redirect based on user.role
+                           → on failure: re-render form with error messages
 """
 
 from django.contrib import messages
+from django.contrib.auth import login
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.generic.edit import FormView
 
-from .forms import UserRegistrationForm
+from .decorators import login_required_custom, role_required
+from .forms import LoginForm, UserRegistrationForm
+from .models import User
 
+
+# =============================================================================
+# 1. RegisterView
+# =============================================================================
 
 class RegisterView(FormView):
     """
@@ -29,45 +45,24 @@ class RegisterView(FormView):
     template_name = 'users/register.html'
     form_class = UserRegistrationForm
 
-    # reverse_lazy() is used instead of reverse() because class attributes
-    # are evaluated at import time, before the URL configuration is loaded.
-    # reverse_lazy() defers the URL resolution until it is actually needed.
-    #
-    # ⚠️  Pointing to 'home' until login view is implemented in the next step.
-    # Change to reverse_lazy('users:login') once login is built.
-    success_url = reverse_lazy('home')
+    # Now points to login since login is implemented in this step.
+    success_url = reverse_lazy('users:login')
 
     # ------------------------------------------------------------------
     # GET request
     # ------------------------------------------------------------------
     def get(self, request, *args, **kwargs):
-        """
-        If a logged-in user visits /register/, redirect them away.
-        Prevents re-registration while already authenticated.
-        """
+        """Redirect already-authenticated users away from register page."""
         if request.user.is_authenticated:
-            return self._redirect_authenticated()
+            return _role_redirect(request.user)
         return super().get(request, *args, **kwargs)
 
     # ------------------------------------------------------------------
     # POST request — valid form
     # ------------------------------------------------------------------
     def form_valid(self, form):
-        """
-        Called by FormView ONLY when form.is_valid() returns True.
-
-        Steps:
-          1. form.save() creates the User with hashed password and role=student.
-          2. A success flash message is queued (rendered in the template).
-          3. super().form_valid() issues an HTTP 302 redirect to success_url.
-
-        We do NOT log the user in here — that is the login step.
-        """
+        """Save the new user, flash success message, redirect to login."""
         user = form.save()
-
-        # Django's messages framework queues a one-time notification.
-        # It is rendered in the template via {% for message in messages %}.
-        # messages.SUCCESS maps to CSS class "success" in the template.
         messages.success(
             request=self.request,
             message=(
@@ -75,32 +70,195 @@ class RegisterView(FormView):
                 'You can now log in.'
             ),
         )
-
         return super().form_valid(form)
 
     # ------------------------------------------------------------------
     # POST request — invalid form
     # ------------------------------------------------------------------
     def form_invalid(self, form):
-        """
-        Called by FormView when form.is_valid() returns False.
-
-        The default behaviour (which we keep) is to re-render the template
-        with the same form instance, which now carries field-level errors.
-        The template iterates {{ field.errors }} to display them inline.
-
-        We add a generic top-level error message as a courtesy.
-        """
+        """Re-render the form with validation errors."""
         messages.error(
             request=self.request,
             message='Please correct the errors below and try again.',
         )
         return super().form_invalid(form)
 
+
+# =============================================================================
+# 2. UserLoginView
+# =============================================================================
+
+class UserLoginView(View):
+    """
+    Processes the login form.
+
+    Why use View (not FormView) here?
+    - FormView's form_valid() always redirects to a static success_url.
+    - Here the redirect destination depends on the user's ROLE, which we
+      only know after authentication — so we need custom form_valid logic.
+    - Using the base View class and handling GET/POST explicitly is cleaner.
+    """
+
+    template_name = 'users/login.html'
+
     # ------------------------------------------------------------------
-    # Private helpers
+    # GET — render empty login form
     # ------------------------------------------------------------------
-    def _redirect_authenticated(self):
-        """Redirect already-logged-in users to the home page."""
-        from django.shortcuts import redirect
-        return redirect('home')
+    def get(self, request):
+        # If the user is already logged in, skip the login page.
+        if request.user.is_authenticated:
+            return _role_redirect(request.user)
+
+        # ?next= is set by Django's @login_required when it redirects to login.
+        # We pass it into the template so the form action can include it.
+        next_url = request.GET.get('next', '')
+        form = LoginForm()
+        return render(request, self.template_name, {
+            'form': form,
+            'next': next_url,
+        })
+
+    # ------------------------------------------------------------------
+    # POST — validate credentials and log in
+    # ------------------------------------------------------------------
+    def post(self, request):
+        """
+        Steps:
+          1. Instantiate LoginForm with POST data.
+          2. form.is_valid() triggers field validation then clean(), which
+             calls authenticate() — returning a User or None.
+          3. On success: call login() to create the session, then redirect.
+          4. On failure: re-render with errors.
+        """
+        form = LoginForm(data=request.POST)
+
+        # Pass the request to the form so authenticate() can use it
+        # (some custom backends and rate-limiters need the request object).
+        form.request = request
+
+        next_url = request.POST.get('next', '')
+
+        if form.is_valid():
+            # authenticate() already ran inside form.clean() — retrieve result.
+            user = form.get_user()
+
+            # ----------------------------------------------------------
+            # Remember Me logic
+            # ----------------------------------------------------------
+            # Django sessions expire when the browser closes by default.
+            # SESSION_COOKIE_AGE in settings controls the max age.
+            # Setting expiry to 0 makes it a session cookie (closes with browser).
+            # Setting expiry to None uses the global SESSION_COOKIE_AGE value.
+            remember = form.cleaned_data.get('remember_me')
+            if not remember:
+                # Session expires when the browser is closed.
+                request.session.set_expiry(0)
+            else:
+                # Session persists for SESSION_COOKIE_AGE seconds (set in settings).
+                # We explicitly call set_expiry(None) to use the global default.
+                request.session.set_expiry(None)
+
+            # ----------------------------------------------------------
+            # login() — creates the session and attaches the user
+            # ----------------------------------------------------------
+            # login() does three things:
+            #   a. Generates a new session key (prevents session fixation attacks).
+            #   b. Stores the user's ID and backend in the session.
+            #   c. Sets request.user = user for the rest of this request.
+            login(request, user)
+
+            messages.success(
+                request,
+                f'Welcome back, {user.first_name or user.username}! '
+                f'Signed in as {user.get_role_display()}.',
+            )
+
+            # ----------------------------------------------------------
+            # Role-based redirect
+            # ----------------------------------------------------------
+            # If the user was redirected here by @login_required (via ?next=),
+            # honour that redirect. Otherwise send them to their dashboard.
+            if next_url:
+                return redirect(next_url)
+            return _role_redirect(user)
+
+        # Form is invalid — re-render with error messages.
+        messages.error(request, 'Login failed. Please check your credentials.')
+        return render(request, self.template_name, {
+            'form': form,
+            'next': next_url,
+        })
+
+
+# =============================================================================
+# 3. StudentDashboardView
+# =============================================================================
+
+@method_decorator(role_required(User.Role.STUDENT), name='dispatch')
+class StudentDashboardView(View):
+    """
+    Student dashboard — accessible only to authenticated users with role='student'.
+
+    @method_decorator wraps a class-based view's dispatch() method with a
+    function-based decorator. dispatch() is the entry point Django calls
+    before routing to get() or post(), so decorating it protects ALL methods.
+
+    name='dispatch' tells method_decorator which CBV method to wrap.
+    """
+
+    template_name = 'users/student_dashboard.html'
+
+    def get(self, request):
+        context = {
+            'user': request.user,
+            'page_title': 'Student Dashboard',
+        }
+        return render(request, self.template_name, context)
+
+
+# =============================================================================
+# 4. TeacherDashboardView
+# =============================================================================
+
+@method_decorator(role_required(User.Role.TEACHER), name='dispatch')
+class TeacherDashboardView(View):
+    """
+    Teacher dashboard — accessible only to authenticated users with role='teacher'.
+    Admin-role users are sent to Django's built-in /admin/ panel instead.
+    """
+
+    template_name = 'users/teacher_dashboard.html'
+
+    def get(self, request):
+        context = {
+            'user': request.user,
+            'page_title': 'Teacher Dashboard',
+        }
+        return render(request, self.template_name, context)
+
+
+# =============================================================================
+# Private helper
+# =============================================================================
+
+def _role_redirect(user):
+    """
+    Return an HttpResponseRedirect to the correct dashboard for the given user.
+
+    Centralising this logic means RegisterView, UserLoginView, and any
+    future "already logged in" guards all redirect consistently.
+
+    Role mapping:
+      student → /accounts/dashboard/student/
+      teacher → /accounts/dashboard/teacher/
+      admin   → /admin/  (Django's built-in admin panel)
+      unknown → home
+    """
+    if user.role == User.Role.STUDENT:
+        return redirect('users:student_dashboard')
+    elif user.role == User.Role.TEACHER:
+        return redirect('users:teacher_dashboard')
+    elif user.role == User.Role.ADMIN:
+        # Admin users are sent directly to Django's admin panel.
+        return redirect('/admin/')
+    return redirect('home')
