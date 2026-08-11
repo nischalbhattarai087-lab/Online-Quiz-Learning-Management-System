@@ -23,7 +23,13 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic.edit import FormView
 
-from .decorators import login_required_custom, role_required
+from .decorators import (
+    admin_required,
+    login_required_custom,
+    role_required,
+    student_required,
+    teacher_required,
+)
 from .forms import (
     CustomPasswordChangeForm,
     LoginForm,
@@ -234,16 +240,10 @@ class UserLogoutView(View):
 # 4. StudentDashboardView
 # =============================================================================
 
-@method_decorator(role_required(User.Role.STUDENT), name='dispatch')
+@method_decorator(student_required, name='dispatch')
 class StudentDashboardView(View):
     """
     Student dashboard — accessible only to authenticated users with role='student'.
-
-    @method_decorator wraps a class-based view's dispatch() method with a
-    function-based decorator. dispatch() is the entry point Django calls
-    before routing to get() or post(), so decorating it protects ALL methods.
-
-    name='dispatch' tells method_decorator which CBV method to wrap.
     """
 
     template_name = 'users/student_dashboard.html'
@@ -257,14 +257,13 @@ class StudentDashboardView(View):
 
 
 # =============================================================================
-# 4. TeacherDashboardView
+# 5. TeacherDashboardView
 # =============================================================================
 
-@method_decorator(role_required(User.Role.TEACHER), name='dispatch')
+@method_decorator(teacher_required, name='dispatch')
 class TeacherDashboardView(View):
     """
     Teacher dashboard — accessible only to authenticated users with role='teacher'.
-    Admin-role users are sent to Django's built-in /admin/ panel instead.
     """
 
     template_name = 'users/teacher_dashboard.html'
@@ -275,6 +274,46 @@ class TeacherDashboardView(View):
             'page_title': 'Teacher Dashboard',
         }
         return render(request, self.template_name, context)
+
+
+# =============================================================================
+# Role-Based Test Views (RBAC Verification)
+# =============================================================================
+
+@method_decorator(student_required, name='dispatch')
+class StudentOnlyView(View):
+    """Test view accessible exclusively to Student role users."""
+    template_name = 'users/student_only.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'page_title': 'Student Only Area',
+            'user': request.user,
+        })
+
+
+@method_decorator(teacher_required, name='dispatch')
+class TeacherOnlyView(View):
+    """Test view accessible exclusively to Teacher role users."""
+    template_name = 'users/teacher_only.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'page_title': 'Teacher Only Area',
+            'user': request.user,
+        })
+
+
+@method_decorator(admin_required, name='dispatch')
+class AdminOnlyView(View):
+    """Test view accessible exclusively to Admin role users."""
+    template_name = 'users/admin_only.html'
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'page_title': 'Admin Only Area',
+            'user': request.user,
+        })
 
 
 # =============================================================================

@@ -93,4 +93,11 @@ urlpatterns = [
         views.TeacherDashboardView.as_view(),
         name='teacher_dashboard',
     ),
+
+    # ------------------------------------------------------------------
+    # Role-Based Test Pages (RBAC Verification)
+    # ------------------------------------------------------------------
+    path('test/student/', views.StudentOnlyView.as_view(), name='student_only'),
+    path('test/teacher/', views.TeacherOnlyView.as_view(), name='teacher_only'),
+    path('test/admin/', views.AdminOnlyView.as_view(), name='admin_only'),
 ]
