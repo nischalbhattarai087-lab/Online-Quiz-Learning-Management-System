@@ -19,6 +19,27 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  .messages-list { list-style: none; margin-bottom: 1.5rem; }
+
+  .message {
+    padding: 0.88rem 1.25rem; border-radius: 12px;
+    font-size: 0.92rem; margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .message.success {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
+  .message.error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+  }
+
   .profile-card {
     background: rgba(27, 30, 48, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -33,9 +54,17 @@
   .profile-header {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    justify-content: space-between;
+    gap: 1.5rem;
     padding-bottom: 2rem;
     border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
   }
 
   .profile-avatar-large {
@@ -104,6 +133,48 @@
     color: #f87171;
   }
 
+  .action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition-smooth);
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-action.primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  }
+
+  .btn-action.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  }
+
+  .btn-action.secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .btn-action.secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+  }
+
   .details-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -112,7 +183,9 @@
   }
 
   @media (max-width: 640px) {
-    .profile-header { flex-direction: column; text-align: center; }
+    .profile-header { flex-direction: column; text-align: center; align-items: center; }
+    .header-left { flex-direction: column; align-items: center; }
+    .action-buttons { justify-content: center; width: 100%; }
     .details-grid { grid-template-columns: 1fr; }
   }
 
@@ -154,32 +227,58 @@
 {% block content %}
 <div class="profile-container" id="user-profile-page">
 
+  {% if messages %}
+    <ul class="messages-list" role="alert" aria-live="polite">
+      {% for message in messages %}
+        <li class="message {{ message.tags }}" id="msg-{{ forloop.counter }}">
+          {% if 'success' in message.tags %}
+            <i class="fa-solid fa-circle-check"></i>
+          {% else %}
+            <i class="fa-solid fa-circle-exclamation"></i>
+          {% endif %}
+          {{ message }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   <div class="profile-card">
 
     <div class="profile-header">
-      <div class="profile-avatar-large" id="profile-avatar">
-        {% if user.profile_picture %}
-          <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}">
-        {% else %}
-          {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-        {% endif %}
+      <div class="header-left">
+        <div class="profile-avatar-large" id="profile-avatar">
+          {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}">
+          {% else %}
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+          {% endif %}
+        </div>
+
+        <div class="profile-identity">
+          <h1>{{ user.full_name }}</h1>
+          <p>@{{ user.username }}</p>
+
+          <span class="role-badge {{ user.role }}" id="user-role-badge">
+            {% if user.role == 'student' %}
+              <i class="fa-solid fa-graduation-cap"></i> Student
+            {% elif user.role == 'teacher' %}
+              <i class="fa-solid fa-chalkboard-user"></i> Teacher
+            {% elif user.role == 'admin' %}
+              <i class="fa-solid fa-user-shield"></i> Administrator
+            {% else %}
+              <i class="fa-solid fa-user"></i> {{ user.get_role_display }}
+            {% endif %}
+          </span>
+        </div>
       </div>
 
-      <div class="profile-identity">
-        <h1>{{ user.full_name }}</h1>
-        <p>@{{ user.username }}</p>
-
-        <span class="role-badge {{ user.role }}" id="user-role-badge">
-          {% if user.role == 'student' %}
-            <i class="fa-solid fa-graduation-cap"></i> Student
-          {% elif user.role == 'teacher' %}
-            <i class="fa-solid fa-chalkboard-user"></i> Teacher
-          {% elif user.role == 'admin' %}
-            <i class="fa-solid fa-user-shield"></i> Administrator
-          {% else %}
-            <i class="fa-solid fa-user"></i> {{ user.get_role_display }}
-          {% endif %}
-        </span>
+      <div class="action-buttons">
+        <a href="{% url 'users:profile_edit' %}" class="btn-action primary" id="btn-edit-profile">
+          <i class="fa-solid fa-user-pen"></i> Edit Profile
+        </a>
+        <a href="{% url 'users:password_change' %}" class="btn-action secondary" id="btn-change-password">
+          <i class="fa-solid fa-key"></i> Change Password
+        </a>
       </div>
     </div>
 

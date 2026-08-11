@@ -13,7 +13,7 @@ Why use Django Forms for login (instead of writing raw POST handling)?
 
 from django import forms
 from django.contrib.auth import authenticate
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import PasswordChangeForm, UserCreationForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
@@ -314,4 +314,106 @@ class LoginForm(forms.Form):
         Raises AttributeError if called before is_valid() — intentional.
         """
         return self.user_cache
+
+
+# =============================================================================
+# UserProfileForm
+# =============================================================================
+
+class UserProfileForm(forms.ModelForm):
+    """
+    Form for updating profile details (first_name, last_name, profile_picture).
+    Role is strictly excluded to prevent unauthorized role modifications.
+    Includes custom image validation for size (<= 5MB) and file format.
+    """
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'id': 'id_first_name',
+            'placeholder': 'First name',
+            'autocomplete': 'given-name',
+        }),
+        label='First Name',
+    )
+
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'id': 'id_last_name',
+            'placeholder': 'Last name',
+            'autocomplete': 'family-name',
+        }),
+        label='Last Name',
+    )
+
+    profile_picture = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'id': 'id_profile_picture',
+            'accept': 'image/*',
+        }),
+        label='Profile Picture',
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'profile_picture']
+
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture and hasattr(picture, 'size'):
+            max_size = 5 * 1024 * 1024  # 5 MB
+            if picture.size > max_size:
+                raise ValidationError('Profile picture size cannot exceed 5 MB.')
+
+            valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            ext = str(picture.name).lower()
+            if not any(ext.endswith(e) for e in valid_extensions):
+                raise ValidationError(
+                    'Unsupported image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.'
+                )
+        return picture
+
+
+# =============================================================================
+# CustomPasswordChangeForm
+# =============================================================================
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    """
+    Password change form extending Django's built-in PasswordChangeForm.
+    Provides old_password, new_password1, and new_password2 with custom widget styling.
+    """
+
+    old_password = forms.CharField(
+        label='Current Password',
+        widget=forms.PasswordInput(attrs={
+            'id': 'id_old_password',
+            'placeholder': 'Enter your current password',
+            'autocomplete': 'current-password',
+        }),
+    )
+
+    new_password1 = forms.CharField(
+        label='New Password',
+        widget=forms.PasswordInput(attrs={
+            'id': 'id_new_password1',
+            'placeholder': 'Enter new password',
+            'autocomplete': 'new-password',
+        }),
+        validators=[validate_password],
+    )
+
+    new_password2 = forms.CharField(
+        label='Confirm New Password',
+        widget=forms.PasswordInput(attrs={
+            'id': 'id_new_password2',
+            'placeholder': 'Confirm new password',
+            'autocomplete': 'new-password',
+        }),
+    )
+
 

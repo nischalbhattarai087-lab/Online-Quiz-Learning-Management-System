@@ -16,7 +16,7 @@ Login flow in detail:
 """
 
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
@@ -24,7 +24,12 @@ from django.views import View
 from django.views.generic.edit import FormView
 
 from .decorators import login_required_custom, role_required
-from .forms import LoginForm, UserRegistrationForm
+from .forms import (
+    CustomPasswordChangeForm,
+    LoginForm,
+    UserProfileForm,
+    UserRegistrationForm,
+)
 from .models import User
 
 
@@ -303,6 +308,82 @@ class UserProfileView(View):
             'page_title': 'My Profile',
         }
         return render(request, self.template_name, context)
+
+
+# =============================================================================
+# 6. UserProfileEditView
+# =============================================================================
+
+@method_decorator(login_required_custom, name='dispatch')
+class UserProfileEditView(View):
+    """
+    Allows authenticated users to update first_name, last_name, and profile_picture.
+    Role is intentionally excluded from the form and model updates.
+    """
+
+    template_name = 'users/profile_edit.html'
+
+    def get(self, request):
+        form = UserProfileForm(instance=request.user)
+        return render(request, self.template_name, {
+            'form': form,
+            'page_title': 'Edit Profile',
+        })
+
+    def post(self, request):
+        form = UserProfileForm(
+            request.POST,
+            request.FILES,
+            instance=request.user,
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('users:profile')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, self.template_name, {
+            'form': form,
+            'page_title': 'Edit Profile',
+        })
+
+
+# =============================================================================
+# 7. UserPasswordChangeView
+# =============================================================================
+
+@method_decorator(login_required_custom, name='dispatch')
+class UserPasswordChangeView(View):
+    """
+    Handles password changing for logged-in users.
+    Uses CustomPasswordChangeForm (old_password, new_password1, new_password2).
+    Calls update_session_auth_hash(request, user) to prevent session invalidation/logout.
+    """
+
+    template_name = 'users/password_change.html'
+
+    def get(self, request):
+        form = CustomPasswordChangeForm(user=request.user)
+        return render(request, self.template_name, {
+            'form': form,
+            'page_title': 'Change Password',
+        })
+
+    def post(self, request):
+        form = CustomPasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            # CRITICAL: update_session_auth_hash keeps the user logged in
+            # by updating the session hash with the user's new password hash.
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('users:profile')
+
+        messages.error(request, 'Please correct the errors below.')
+        return render(request, self.template_name, {
+            'form': form,
+            'page_title': 'Change Password',
+        })
 
 
 # =============================================================================

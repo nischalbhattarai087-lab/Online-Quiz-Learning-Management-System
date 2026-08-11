@@ -34,9 +34,11 @@ urlpatterns = [
     path('logout/', views.UserLogoutView.as_view(), name='logout'),
 
     # ------------------------------------------------------------------
-    # User Profile
+    # User Profile & Settings
     # ------------------------------------------------------------------
     path('profile/', views.UserProfileView.as_view(), name='profile'),
+    path('profile/edit/', views.UserProfileEditView.as_view(), name='profile_edit'),
+    path('password-change/', views.UserPasswordChangeView.as_view(), name='password_change'),
 
     # ------------------------------------------------------------------
     # Django Built-in Password Reset System
