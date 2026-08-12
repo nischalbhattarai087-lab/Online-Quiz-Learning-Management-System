@@ -19,15 +19,20 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from users.views import StudentDashboardView, TeacherDashboardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Users app — registration, login, logout, profile, etc.
-    # include('users.urls', namespace='users') mounts the app's urlpatterns
-    # under the /accounts/ prefix AND registers the 'users' namespace.
-    # e.g. /accounts/register/  →  users:register
     path('accounts/', include('users.urls', namespace='users')),
+
+    # Admin Dashboard app
+    path('admin-dashboard/', include('admin_dashboard.urls', namespace='admin_dashboard')),
+
+    # Role-specific dashboard URL aliases
+    path('student/dashboard/', StudentDashboardView.as_view(), name='student_dashboard'),
+    path('teacher/dashboard/', TeacherDashboardView.as_view(), name='teacher_dashboard'),
 
     # Simple home route using base.html template
     path('', TemplateView.as_view(template_name='base.html'), name='home'),
@@ -36,5 +41,4 @@ urlpatterns = [
 # Serve static and media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

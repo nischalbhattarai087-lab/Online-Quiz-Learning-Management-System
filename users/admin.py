@@ -44,6 +44,28 @@ class UserAdmin(BaseUserAdmin):
 
     ordering = ('date_joined',)
 
+    actions = ['activate_users', 'deactivate_users', 'promote_to_teacher', 'demote_to_student']
+
+    @admin.action(description='Activate selected users')
+    def activate_users(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'{updated} user(s) successfully activated.')
+
+    @admin.action(description='Deactivate selected users')
+    def deactivate_users(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'{updated} user(s) successfully deactivated.')
+
+    @admin.action(description='Promote selected users to Teacher role')
+    def promote_to_teacher(self, request, queryset):
+        updated = queryset.update(role=User.Role.TEACHER)
+        self.message_user(request, f'{updated} user(s) promoted to Teacher role.')
+
+    @admin.action(description='Set selected users to Student role')
+    def demote_to_student(self, request, queryset):
+        updated = queryset.update(role=User.Role.STUDENT)
+        self.message_user(request, f'{updated} user(s) set to Student role.')
+
     # ------------------------------------------------------------------
     # Detail / edit view — fieldsets
     # ------------------------------------------------------------------

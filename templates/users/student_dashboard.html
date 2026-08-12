@@ -3,195 +3,381 @@
 {% block title %}Student Dashboard — LMS Portal{% endblock %}
 
 {% block meta_description %}
-  Your personal learning dashboard. Track progress, access courses and quizzes.
+  Student Learning Dashboard. Manage courses, track quiz attempts, and view learning resources.
 {% endblock %}
 
 {% block extra_css %}
+<!-- Bootstrap 5 CSS CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <style>
-  .dash-header {
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+  /* Base Override for LMS Dark Theme integration */
+  body {
+    background-color: var(--bg-primary, #0a0b10);
+    color: var(--text-primary, #f3f4f6);
+  }
+
+  .dashboard-wrapper {
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Sidebar Styling */
+  .sidebar-card {
+    background-color: var(--bg-secondary, #121420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .sidebar-user-header {
+    padding: 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+  }
+
+  .sidebar-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    margin: 0 auto 0.8rem;
+    background: linear-gradient(135deg, var(--primary, #6366f1) 0%, var(--secondary, #a855f7) 100%);
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    overflow: hidden;
   }
 
-  .dash-avatar {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem; color: #fff;
-    font-family: 'Outfit', sans-serif; font-weight: 700;
-    box-shadow: 0 4px 20px rgba(99,102,241,.4);
-    flex-shrink: 0;
+  .sidebar-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  .dash-greeting h1 {
-    font-size: 1.6rem; margin-bottom: 0.2rem;
+  .sidebar-nav .list-group-item {
+    background-color: transparent;
+    color: var(--text-secondary, #9ca3af);
+    border: none;
+    padding: 0.85rem 1.25rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: var(--transition-smooth, all 0.3s ease);
   }
 
-  .dash-greeting p { color: var(--text-secondary); font-size: 0.95rem; }
+  .sidebar-nav .list-group-item:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: var(--text-primary, #f3f4f6);
+  }
 
-  .role-pill {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    background: rgba(99,102,241,.12);
-    border: 1px solid rgba(99,102,241,.25);
+  .sidebar-nav .list-group-item.active {
+    background-color: rgba(99, 102, 241, 0.2);
     color: #818cf8;
-    font-size: 0.78rem; font-weight: 600;
-    padding: 0.25rem 0.7rem; border-radius: 99px;
-    margin-top: 0.35rem;
+    border-left: 4px solid var(--primary, #6366f1);
+    font-weight: 600;
   }
 
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.25rem;
-    margin-bottom: 2.5rem;
+  /* Top Nav Header Inside Main Area */
+  .dashboard-top-nav {
+    background-color: var(--bg-secondary, #121420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  .stat-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 14px; padding: 1.5rem;
-    transition: var(--transition-smooth);
-    position: relative; overflow: hidden;
+  /* Stat Card Styling */
+  .dashboard-stat-card {
+    background-color: var(--bg-secondary, #121420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    padding: 1.5rem;
+    height: 100%;
+    transition: transform 0.2s ease, border-color 0.2s ease;
   }
 
-  .stat-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
-    opacity: 0; transition: var(--transition-smooth);
+  .dashboard-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.3);
   }
 
-  .stat-card:hover { transform: translateY(-3px); border-color: rgba(99,102,241,.25); }
-  .stat-card:hover::before { opacity: 1; }
-
-  .stat-icon {
-    font-size: 1.6rem; margin-bottom: 0.75rem;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  }
-
-  .stat-value {
-    font-family: 'Outfit', sans-serif;
-    font-size: 2rem; font-weight: 700;
-    color: var(--text-primary); margin-bottom: 0.2rem;
-  }
-
-  .stat-label { color: var(--text-secondary); font-size: 0.85rem; }
-
-  .section-title {
-    font-size: 1.15rem; font-weight: 600;
-    color: var(--text-primary);
+  .stat-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
     margin-bottom: 1rem;
-    display: flex; align-items: center; gap: 0.6rem;
   }
 
-  .coming-soon {
-    background: var(--bg-secondary);
-    border: 1px dashed rgba(255,255,255,.08);
-    border-radius: 14px; padding: 3rem;
-    text-align: center; color: var(--text-muted);
+  .stat-icon-blue { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; }
+  .stat-icon-amber { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+  .stat-icon-emerald { background-color: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+  .stat-number {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary, #f3f4f6);
+    line-height: 1;
+    margin-bottom: 0.35rem;
   }
 
-  .coming-soon i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
-  .coming-soon p { font-size: 0.9rem; }
-
-  .messages-list { list-style: none; margin-bottom: 1.5rem; }
-
-  .message {
-    padding: 0.8rem 1rem; border-radius: 10px;
-    font-size: 0.9rem; margin-bottom: 0.5rem;
-    display: flex; align-items: center; gap: 0.6rem;
+  .stat-title {
+    color: var(--text-secondary, #9ca3af);
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
-  .message.success {
-    background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.3);
-    color: #34d399;
+  /* Section Card Styling */
+  .content-card {
+    background-color: var(--bg-secondary, #121420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
-  @media (max-width: 600px) {
-    .dash-header { flex-direction: column; align-items: flex-start; }
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted, #6b7280);
+  }
+
+  .empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.8rem;
+    color: var(--text-muted, #6b7280);
+    opacity: 0.6;
+  }
+
+  .badge-role-student {
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 0.35em 0.75em;
+    border-radius: 99px;
+    font-size: 0.8rem;
   }
 </style>
 {% endblock %}
 
-
 {% block content %}
+<div class="container-fluid dashboard-wrapper" id="student-dashboard-root">
 
-{% if messages %}
-  <ul class="messages-list" role="alert" aria-live="polite">
-    {% for message in messages %}
-      <li class="message {{ message.tags }}" id="msg-{{ forloop.counter }}">
-        <i class="fa-solid fa-circle-check"></i> {{ message }}
-      </li>
-    {% endfor %}
-  </ul>
-{% endif %}
+  {% if messages %}
+    <div class="row mb-3">
+      <div class="col-12">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show text-white bg-dark border-secondary mb-2" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i> {{ message }}
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
-<div class="dash-header" id="student-dashboard-header">
-  <div class="dash-avatar" aria-hidden="true">
-    {% if user.profile_picture %}
-      <img src="{{ user.profile_picture.url }}"
-           alt="{{ user.full_name }}"
-           style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-    {% else %}
-      {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
-    {% endif %}
-  </div>
-  <div class="dash-greeting">
-    <h1>Hello, {{ user.first_name|default:user.username }}! 👋</h1>
-    <p>Here's what's happening in your learning journey today.</p>
-    <span class="role-pill">
-      <i class="fa-solid fa-graduation-cap"></i>
-      {{ user.get_role_display }}
-    </span>
+  <div class="row g-4">
+
+    <!-- Sidebar Column -->
+    <aside class="col-lg-3 col-md-4">
+      <div class="sidebar-card shadow-sm" id="student-sidebar">
+
+        <!-- User Brief Profile Header -->
+        <div class="sidebar-user-header">
+          <div class="sidebar-avatar">
+            {% if user.profile_picture %}
+              <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}">
+            {% else %}
+              {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            {% endif %}
+          </div>
+          <h5 class="fw-bold mb-1 text-white">{{ user.full_name }}</h5>
+          <p class="text-secondary small mb-2">{{ user.email }}</p>
+          <span class="badge badge-role-student">
+            <i class="fa-solid fa-user-graduate me-1"></i> {{ user.get_role_display }}
+          </span>
+        </div>
+
+        <!-- Sidebar Navigation List -->
+        <nav class="sidebar-nav list-group list-group-flush py-2">
+          <a href="{% url 'student_dashboard' %}" class="list-group-item active" id="side-dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+          </a>
+          <a href="#" class="list-group-item" id="side-courses">
+            <i class="fa-solid fa-book-open"></i> My Courses
+          </a>
+          <a href="#" class="list-group-item" id="side-quizzes">
+            <i class="fa-solid fa-clipboard-question"></i> My Quizzes
+          </a>
+          <a href="#" class="list-group-item" id="side-results">
+            <i class="fa-solid fa-square-poll-vertical"></i> Results
+          </a>
+          <a href="#" class="list-group-item" id="side-certificates">
+            <i class="fa-solid fa-certificate"></i> Certificates
+          </a>
+        </nav>
+
+      </div>
+    </aside>
+
+    <!-- Main Dashboard Content Area -->
+    <main class="col-lg-9 col-md-8">
+
+      <!-- Top Navigation Bar -->
+      <header class="dashboard-top-nav d-flex align-items-center justify-content-between shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-graduation-cap text-primary fs-4"></i>
+          <span class="fw-bold fs-5 text-white">LMS Portal</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-circle overflow-hidden bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px; height:36px; font-size:0.9rem;">
+              {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="{{ user.full_name }}" style="width:100%; height:100%; object-fit:cover;">
+              {% else %}
+                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+              {% endif %}
+            </div>
+            <span class="fw-semibold text-white d-none d-sm-inline">{{ user.full_name }}</span>
+          </div>
+          <form method="post" action="{% url 'users:logout' %}" class="m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-light" title="Logout" id="top-logout-btn">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <!-- Welcome Banner Section -->
+      <section class="content-card shadow-sm mb-4">
+        <div class="row align-items-center">
+          <div class="col-lg-8 col-md-7">
+            <h2 class="fw-bold text-white mb-2" id="welcome-heading">
+              Welcome back, {{ user.first_name|default:user.username }}!
+            </h2>
+            <p class="text-secondary mb-3">
+              Ready to explore your courses and expand your skills today?
+            </p>
+            <div class="d-flex flex-wrap gap-3 text-secondary small">
+              <div><i class="fa-solid fa-user me-1 text-primary"></i> <strong>Username:</strong> {{ user.username }}</div>
+              <div><i class="fa-solid fa-envelope me-1 text-primary"></i> <strong>Email:</strong> {{ user.email }}</div>
+              <div><i class="fa-solid fa-calendar me-1 text-primary"></i> <strong>Joined:</strong> {{ user.date_joined|date:"F j, Y" }}</div>
+            </div>
+          </div>
+          <div class="col-lg-4 col-md-5 text-md-end text-start mt-3 mt-md-0">
+            <a href="#" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+              <i class="fa-solid fa-compass me-1"></i> Browse Courses
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistics Cards Section -->
+      <section class="row g-3 mb-4" id="stats-section">
+        
+        <!-- Enrolled Courses Stat Card -->
+        <div class="col-md-4 col-sm-6">
+          <div class="dashboard-stat-card shadow-sm">
+            <div class="stat-icon-box stat-icon-blue">
+              <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div class="stat-number" id="stat-enrolled">{{ enrolled_courses_count }}</div>
+            <div class="stat-title">Enrolled Courses</div>
+          </div>
+        </div>
+
+        <!-- Quiz Attempts Stat Card -->
+        <div class="col-md-4 col-sm-6">
+          <div class="dashboard-stat-card shadow-sm">
+            <div class="stat-icon-box stat-icon-amber">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="stat-number" id="stat-quiz-attempts">{{ quiz_attempts_count }}</div>
+            <div class="stat-title">Quiz Attempts</div>
+          </div>
+        </div>
+
+        <!-- Average Quiz Score Stat Card -->
+        <div class="col-md-4 col-sm-12">
+          <div class="dashboard-stat-card shadow-sm">
+            <div class="stat-icon-box stat-icon-emerald">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="stat-number" id="stat-avg-score">{{ avg_quiz_score }}%</div>
+            <div class="stat-title">Average Quiz Score</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Recent Activity Sections -->
+      <div class="row g-4">
+
+        <!-- Recent Courses -->
+        <div class="col-lg-6 col-12">
+          <div class="content-card shadow-sm h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="fw-bold text-white mb-0">
+                <i class="fa-solid fa-layer-group text-primary me-2"></i> Recent Courses
+              </h5>
+            </div>
+            <div class="empty-state" id="recent-courses-empty">
+              <i class="fa-solid fa-folder-open"></i>
+              <p class="mb-0">No courses enrolled yet. Browse the catalogue to get started.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Quiz Results -->
+        <div class="col-lg-6 col-12">
+          <div class="content-card shadow-sm h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="fw-bold text-white mb-0">
+                <i class="fa-solid fa-list-check me-2" style="color:var(--secondary,#a855f7)"></i> Recent Quiz Results
+              </h5>
+            </div>
+            <div class="empty-state" id="recent-quizzes-empty">
+              <i class="fa-solid fa-clipboard-list"></i>
+              <p class="mb-0">No quiz attempts yet. Start learning to see your progress here.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Learning Progress -->
+        <div class="col-12">
+          <div class="content-card shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h5 class="fw-bold text-white mb-0">
+                <i class="fa-solid fa-chart-simple text-success me-2"></i> Learning Progress
+              </h5>
+            </div>
+            <div class="empty-state" id="learning-progress-empty">
+              <i class="fa-solid fa-chart-column"></i>
+              <p class="mb-0">No activity yet. Start learning to see your progress here.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
   </div>
 </div>
+{% endblock %}
 
-<div class="stats-grid" id="student-stats">
-  <div class="stat-card">
-    <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
-    <div class="stat-value">0</div>
-    <div class="stat-label">Courses Enrolled</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
-    <div class="stat-value">0</div>
-    <div class="stat-label">Quizzes Completed</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon"><i class="fa-solid fa-trophy"></i></div>
-    <div class="stat-value">—</div>
-    <div class="stat-label">Best Score</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
-    <div class="stat-value">0</div>
-    <div class="stat-label">Day Streak</div>
-  </div>
-</div>
-
-<h2 class="section-title">
-  <i class="fa-solid fa-layer-group" style="color:var(--primary)"></i>
-  My Courses
-</h2>
-<div class="coming-soon" id="my-courses-placeholder">
-  <i class="fa-solid fa-box-open" style="color:var(--text-muted)"></i>
-  <p>You haven't enrolled in any courses yet. Browse the catalogue to get started.</p>
-</div>
-
-<h2 class="section-title" style="margin-top:2rem;">
-  <i class="fa-solid fa-clipboard-question" style="color:var(--secondary)"></i>
-  Recent Quiz Attempts
-</h2>
-<div class="coming-soon" id="quiz-attempts-placeholder">
-  <i class="fa-solid fa-list-check" style="color:var(--text-muted)"></i>
-  <p>No quiz attempts yet. Take your first quiz to see your results here.</p>
-</div>
-
+{% block extra_js %}
+<!-- Bootstrap 5 Bundle JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

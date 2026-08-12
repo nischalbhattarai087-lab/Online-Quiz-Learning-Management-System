@@ -66,7 +66,7 @@ def role_required(*allowed_roles, raise_exception=True):
                 elif request.user.role == User.Role.TEACHER:
                     return redirect('users:teacher_dashboard')
                 elif request.user.role == User.Role.ADMIN:
-                    return redirect('/admin/')
+                    return redirect('admin_dashboard:dashboard')
                 return redirect('home')
 
             return view_func(request, *args, **kwargs)

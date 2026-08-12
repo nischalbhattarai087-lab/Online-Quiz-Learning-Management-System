@@ -252,6 +252,10 @@ class StudentDashboardView(View):
         context = {
             'user': request.user,
             'page_title': 'Student Dashboard',
+            # Statistics placeholders — will connect to real models in future steps
+            'enrolled_courses_count': 0,
+            'quiz_attempts_count': 0,
+            'avg_quiz_score': 0,
         }
         return render(request, self.template_name, context)
 
@@ -272,6 +276,15 @@ class TeacherDashboardView(View):
         context = {
             'user': request.user,
             'page_title': 'Teacher Dashboard',
+            # Placeholders — swap for real querysets when models exist:
+            # 'total_courses':  Course.objects.filter(teacher=request.user).count()
+            # 'total_students': Enrollment.objects.filter(course__teacher=request.user).count()
+            # 'total_quizzes':  Quiz.objects.filter(course__teacher=request.user).count()
+            # 'avg_score':      Attempt.objects.filter(...).aggregate(Avg('score'))
+            'total_courses': 0,
+            'total_students': 0,
+            'total_quizzes': 0,
+            'avg_score': 0,
         }
         return render(request, self.template_name, context)
 
@@ -447,6 +460,5 @@ def _role_redirect(user):
     elif user.role == User.Role.TEACHER:
         return redirect('users:teacher_dashboard')
     elif user.role == User.Role.ADMIN:
-        # Admin users are sent directly to Django's admin panel.
-        return redirect('/admin/')
+        return redirect('admin_dashboard:dashboard')
     return redirect('home')
