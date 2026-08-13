@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     # Custom apps
     'users.apps.UsersConfig',
     'admin_dashboard.apps.AdminDashboardConfig',
+    'quiz.apps.QuizConfig',
+    'courses.apps.CoursesConfig',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} — LMS Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: var(--card-shadow);
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .course-hero-img {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .meta-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+
+  .meta-item span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .badge-published {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+  }
+
+  .badge-draft {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-card">
+  <div class="detail-header">
+    <div>
+      <a href="{% url 'courses:teacher_course_list' %}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.9rem;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Courses
+      </a>
+      <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.5rem; margin-bottom: 0.5rem;">
+        {{ course.title }}
+      </h1>
+      <div>
+        {% if course.is_published %}
+          <span class="badge-published"><i class="fa-solid fa-circle-check"></i> Published</span>
+        {% else %}
+          <span class="badge-draft"><i class="fa-solid fa-clock-rotate-left"></i> Draft</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{% url 'courses:teacher_course_edit' course.slug %}" class="nav-btn" style="text-decoration: none;">
+        <i class="fa-solid fa-pen-to-square"></i> Edit Course
+      </a>
+      <a href="{% url 'courses:teacher_course_delete' course.slug %}" style="padding: 0.6rem 1.2rem; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; text-decoration: none; font-weight: 600;">
+        <i class="fa-solid fa-trash"></i> Delete
+      </a>
+    </div>
+  </div>
+
+  {% if course.thumbnail %}
+    <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="course-hero-img">
+  {% endif %}
+
+  <div class="meta-grid">
+    <div class="meta-item">
+      <label>Instructor</label>
+      <span>{{ course.teacher.get_full_name|default:course.teacher.username }}</span>
+    </div>
+    <div class="meta-item">
+      <label>Category</label>
+      <span>{{ course.category.name|default:"Uncategorized" }}</span>
+    </div>
+    <div class="meta-item">
+      <label>Difficulty</label>
+      <span>{{ course.get_difficulty_display }}</span>
+    </div>
+    <div class="meta-item">
+      <label>Price</label>
+      <span>{% if course.price > 0 %}${{ course.price }}{% else %}Free{% endif %}</span>
+    </div>
+    <div class="meta-item">
+      <label>Created Date</label>
+      <span>{{ course.created_at|date:"F j, Y" }}</span>
+    </div>
+    <div class="meta-item">
+      <label>Last Updated</label>
+      <span>{{ course.updated_at|date:"F j, Y" }}</span>
+    </div>
+  </div>
+
+  <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 2rem; border-radius: 12px;">
+    <h2 style="font-size: 1.25rem; color: var(--text-primary); margin-bottom: 1rem;">Course Description</h2>
+    <div style="color: var(--text-secondary); line-height: 1.7; whitespace: pre-line;">
+      {{ course.description }}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Attempting: {{ quiz.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .attempt-header {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: sticky;
+    top: 80px;
+    z-index: 10;
+    backdrop-filter: blur(16px);
+  }
+
+  .timer-badge {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .question-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--card-shadow);
+  }
+
+  .question-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .choices-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .choice-label {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    padding: 0.9rem 1.25rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    font-size: 0.95rem;
+  }
+
+  .choice-label:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  .choice-input {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  .submit-bar {
+    text-align: center;
+    margin-top: 2rem;
+    padding-bottom: 3rem;
+  }
+
+  .btn-submit {
+    padding: 0.85rem 2.5rem;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="attempt-header">
+  <div>
+    <h1 style="font-size: 1.5rem; color: var(--text-primary); margin-bottom: 0.2rem;">
+      {{ quiz.title }}
+    </h1>
+    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+      <i class="fa-solid fa-layer-group"></i> {{ questions.count }} Questions
+    </p>
+  </div>
+  <div class="timer-badge" id="timer-display">
+    <i class="fa-regular fa-clock"></i> <span id="time-left">{{ quiz.time_limit_minutes }}:00</span>
+  </div>
+</div>
+
+<form method="post" id="quiz-form">
+  {% csrf_token %}
+
+  {% for question in questions %}
+    <div class="question-card">
+      <div class="question-text">
+        Q{{ forloop.counter }}. {{ question.text }}
+      </div>
+
+      <div class="choices-container">
+        {% for choice in question.choices.all %}
+          <label class="choice-label">
+            <input type="radio" name="question_{{ question.id }}" value="{{ choice.id }}" class="choice-input" required>
+            <span>{{ choice.text }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="submit-bar">
+    <button type="submit" class="nav-btn btn-submit">
+      <i class="fa-solid fa-paper-plane"></i> Submit Quiz Answers
+    </button>
+  </div>
+</form>
+
+{% block extra_js %}
+<script>
+  // Countdown Timer Script
+  const totalMinutes = {{ quiz.time_limit_minutes }};
+  let timeInSeconds = totalMinutes * 60;
+
+  const timerDisplay = document.getElementById('time-left');
+  const quizForm = document.getElementById('quiz-form');
+
+  const countdown = setInterval(() => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    let seconds = timeInSeconds % 60;
+    seconds = seconds < 10 ? '0' + seconds : seconds;
+
+    timerDisplay.textContent = `${minutes}:${seconds}`;
+
+    if (timeInSeconds <= 0) {
+      clearInterval(countdown);
+      alert('Time is up! Your quiz answers will be submitted automatically.');
+      quizForm.submit();
+    }
+    timeInSeconds--;
+  }, 1000);
+</script>
+{% endblock %}
+{% endblock %}

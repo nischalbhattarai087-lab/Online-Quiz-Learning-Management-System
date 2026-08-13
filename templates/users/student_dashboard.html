@@ -216,11 +216,11 @@
           <a href="#" class="list-group-item" id="side-courses">
             <i class="fa-solid fa-book-open"></i> My Courses
           </a>
-          <a href="#" class="list-group-item" id="side-quizzes">
-            <i class="fa-solid fa-clipboard-question"></i> My Quizzes
+          <a href="{% url 'quiz:available_quizzes' %}" class="list-group-item" id="side-quizzes">
+            <i class="fa-solid fa-clipboard-question"></i> Available Quizzes
           </a>
-          <a href="#" class="list-group-item" id="side-results">
-            <i class="fa-solid fa-square-poll-vertical"></i> Results
+          <a href="{% url 'quiz:student_history' %}" class="list-group-item" id="side-results">
+            <i class="fa-solid fa-square-poll-vertical"></i> Quiz History
           </a>
           <a href="#" class="list-group-item" id="side-certificates">
             <i class="fa-solid fa-certificate"></i> Certificates

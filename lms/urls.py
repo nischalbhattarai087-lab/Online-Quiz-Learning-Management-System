@@ -30,6 +30,12 @@ urlpatterns = [
     # Admin Dashboard app
     path('admin-dashboard/', include('admin_dashboard.urls', namespace='admin_dashboard')),
 
+    # Quiz app
+    path('quiz/', include('quiz.urls', namespace='quiz')),
+
+    # Course app
+    path('', include('courses.urls', namespace='courses')),
+
     # Role-specific dashboard URL aliases
     path('student/dashboard/', StudentDashboardView.as_view(), name='student_dashboard'),
     path('teacher/dashboard/', TeacherDashboardView.as_view(), name='teacher_dashboard'),

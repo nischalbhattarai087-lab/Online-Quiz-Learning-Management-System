@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results — {{ attempt.quiz.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .result-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+  }
+
+  .score-circle {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 1.5rem auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 800;
+    border: 6px solid var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  .score-passed {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .score-failed {
+    border-color: var(--error);
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    color: var(--text-secondary);
+  }
+
+  .review-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+
+  .question-item {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .choice-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .badge-correct {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge-wrong {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .badge-normal {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-card">
+  <h1 style="font-size: 1.75rem; color: var(--text-primary);">Quiz Results</h1>
+  <p style="color: var(--text-secondary);">{{ attempt.quiz.title }}</p>
+
+  <div class="score-circle {% if attempt.score >= 60 %}score-passed{% else %}score-failed{% endif %}">
+    <span>{{ attempt.score|floatformat:1 }}%</span>
+    <span style="font-size: 0.8rem; font-weight: 500; text-transform: uppercase;">Score</span>
+  </div>
+
+  <h2 style="font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.5rem;">
+    {% if attempt.score >= 60 %}
+      <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Great Job! You passed.
+    {% else %}
+      <i class="fa-solid fa-circle-xmark" style="color: var(--error);"></i> Keep Practicing!
+    {% endif %}
+  </h2>
+
+  <div class="stat-row">
+    <div>
+      <strong style="color: var(--text-primary);">{{ attempt.correct_answers_count }} / {{ attempt.total_questions_count }}</strong>
+      <div>Correct Answers</div>
+    </div>
+    <div>
+      <strong style="color: var(--text-primary);">{{ attempt.submitted_at|date:"M d, Y H:i" }}</strong>
+      <div>Submitted At</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 2rem;">
+    <a href="{% url 'quiz:available_quizzes' %}" class="nav-btn" style="text-decoration: none;">
+      <i class="fa-solid fa-arrow-left"></i> Back to Quizzes
+    </a>
+  </div>
+</div>
+
+<div class="review-section">
+  <h2 style="font-size: 1.3rem; color: var(--text-primary); margin-bottom: 1.5rem;">
+    <i class="fa-solid fa-square-check" style="color: var(--primary);"></i> Detailed Question Review
+  </h2>
+
+  {% for q_item in questions_review %}
+    <div class="question-item">
+      <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.75rem;">
+        Q{{ forloop.counter }}. {{ q_item.question.text }}
+      </h3>
+
+      {% for choice_info in q_item.choices %}
+        {% if choice_info.is_selected and choice_info.is_correct %}
+          <div class="choice-badge badge-correct">
+            <i class="fa-solid fa-circle-check"></i> {{ choice_info.choice.text }} (Your Choice — Correct!)
+          </div>
+        {% elif choice_info.is_selected and not choice_info.is_correct %}
+          <div class="choice-badge badge-wrong">
+            <i class="fa-solid fa-circle-xmark"></i> {{ choice_info.choice.text }} (Your Choice — Incorrect)
+          </div>
+        {% elif choice_info.is_correct %}
+          <div class="choice-badge badge-correct">
+            <i class="fa-solid fa-check"></i> {{ choice_info.choice.text }} (Correct Answer)
+          </div>
+        {% else %}
+          <div class="choice-badge badge-normal">
+            <i class="fa-regular fa-circle"></i> {{ choice_info.choice.text }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -298,7 +298,17 @@
             <ul class="nav-links">
                 <li><a href="/" id="link-home">Home</a></li>
                 <li><a href="#" id="link-courses">Courses</a></li>
-                <li><a href="#" id="link-quizzes">Quizzes</a></li>
+                {% if user.is_authenticated %}
+                    {% if user.role == 'student' %}
+                        <li><a href="{% url 'quiz:available_quizzes' %}" id="link-quizzes">Quizzes</a></li>
+                    {% elif user.role == 'teacher' %}
+                        <li><a href="{% url 'quiz:teacher_quiz_list' %}" id="link-quizzes">Quizzes</a></li>
+                    {% elif user.role == 'admin' %}
+                        <li><a href="{% url 'quiz:admin_quiz_list' %}" id="link-quizzes">Quizzes</a></li>
+                    {% endif %}
+                {% else %}
+                    <li><a href="{% url 'quiz:available_quizzes' %}" id="link-quizzes">Quizzes</a></li>
+                {% endif %}
                 {% if user.is_authenticated %}
                     {% if user.role == 'student' %}
                         <li><a href="{% url 'users:student_dashboard' %}" id="link-dashboard">My Dashboard</a></li>

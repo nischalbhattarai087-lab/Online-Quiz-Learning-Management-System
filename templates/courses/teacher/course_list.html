@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses — LMS Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .course-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition-smooth);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .course-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .course-thumbnail {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .course-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .course-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .course-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .badge-status {
+    padding: 0.25rem 0.65rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .badge-published {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .badge-draft {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .badge-difficulty {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  .course-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-sm {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-accent {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-accent:hover {
+    background: rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  .btn-warning:hover {
+    background: rgba(245, 158, 11, 0.3);
+  }
+
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+  }
+
+  .pagination-container {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .pagination-link {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .pagination-link.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1 style="font-size: 2rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+      <i class="fa-solid fa-book-open" style="color: var(--primary);"></i> My Courses
+    </h1>
+    <p style="color: var(--text-secondary);">Manage and publish your educational courses.</p>
+  </div>
+  <a href="{% url 'courses:teacher_course_create' %}" class="nav-btn" style="text-decoration: none;">
+    <i class="fa-solid fa-plus"></i> Create New Course
+  </a>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; background: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %}; border: 1px solid {% if message.tags == 'error' %}rgba(239, 68, 68, 0.4){% else %}rgba(16, 185, 129, 0.4){% endif %}; color: var(--text-primary);">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% if courses %}
+  <div class="course-grid">
+    {% for course in courses %}
+      <div class="course-card">
+        {% if course.thumbnail %}
+          <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="course-thumbnail">
+        {% else %}
+          <div class="course-thumbnail">
+            <i class="fa-solid fa-graduation-cap" style="font-size: 3rem; opacity: 0.5;"></i>
+          </div>
+        {% endif %}
+
+        <div class="course-body">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <h2 class="course-title">{{ course.title }}</h2>
+              {% if course.is_published %}
+                <span class="badge-status badge-published"><i class="fa-solid fa-circle-check"></i> Published</span>
+              {% else %}
+                <span class="badge-status badge-draft"><i class="fa-solid fa-clock-rotate-left"></i> Draft</span>
+              {% endif %}
+            </div>
+
+            <div class="course-meta">
+              {% if course.category %}
+                <span><i class="fa-solid fa-folder"></i> {{ course.category.name }}</span>
+              {% endif %}
+              <span class="badge-status badge-difficulty">{{ course.get_difficulty_display }}</span>
+              <span><i class="fa-solid fa-tag"></i> {% if course.price > 0 %}${{ course.price }}{% else %}Free{% endif %}</span>
+            </div>
+            
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+              Created: {{ course.created_at|date:"M d, Y" }} | Updated: {{ course.updated_at|date:"M d, Y" }}
+            </p>
+          </div>
+
+          <div class="course-actions">
+            <a href="{% url 'courses:teacher_course_detail' course.slug %}" class="btn-sm btn-secondary" title="View Course">
+              <i class="fa-solid fa-eye"></i> View
+            </a>
+            <a href="{% url 'courses:teacher_course_edit' course.slug %}" class="btn-sm btn-secondary" title="Edit Course">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </a>
+
+            {% if course.is_published %}
+              <form method="post" action="{% url 'courses:teacher_course_unpublish' course.slug %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm btn-warning" title="Unpublish">
+                  <i class="fa-solid fa-eye-slash"></i> Unpublish
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'courses:teacher_course_publish' course.slug %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm btn-accent" title="Publish">
+                  <i class="fa-solid fa-paper-plane"></i> Publish
+                </button>
+              </form>
+            {% endif %}
+
+            <a href="{% url 'courses:teacher_course_delete' course.slug %}" class="btn-sm btn-danger" title="Delete Course">
+              <i class="fa-solid fa-trash"></i> Delete
+            </a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <div class="pagination-container">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="pagination-link">&laquo; Previous</a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="pagination-link active">{{ num }}</span>
+        {% else %}
+          <a href="?page={{ num }}" class="pagination-link">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="pagination-link">Next &raquo;</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-book-bookmark" style="font-size: 3.5rem; color: var(--primary); opacity: 0.6; margin-bottom: 1rem;"></i>
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-primary);">You haven't created any courses yet.</h2>
+    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 1.5rem;">
+      Start sharing your knowledge by creating your first course on LMS Portal.
+    </p>
+    <a href="{% url 'courses:teacher_course_create' %}" class="nav-btn" style="text-decoration: none;">
+      <i class="fa-solid fa-plus"></i> Create Your First Course
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

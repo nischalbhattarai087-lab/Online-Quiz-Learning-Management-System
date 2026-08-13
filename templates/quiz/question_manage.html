@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Questions — {{ quiz.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .manage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  @media (max-width: 900px) {
+    .grid-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .card-box {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--card-shadow);
+  }
+
+  .question-item {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .choice-list {
+    list-style: none;
+    margin-top: 0.75rem;
+  }
+
+  .choice-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  .choice-correct {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .choice-normal {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+  }
+
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.4rem;
+    color: var(--text-primary);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+
+  .choice-formset-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-primary);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="manage-header">
+  <div>
+    <h1 style="font-size: 1.75rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+      <i class="fa-solid fa-list-check" style="color: var(--primary);"></i> {{ quiz.title }}
+    </h1>
+    <p style="color: var(--text-secondary);">Add questions and answer choices for this quiz.</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{% url 'quiz:teacher_quiz_list' %}" class="btn-cancel" style="padding: 0.6rem 1.2rem; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary);">
+      <i class="fa-solid fa-arrow-left"></i> Back to Quizzes
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div style="padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; background: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %}; border: 1px solid {% if message.tags == 'error' %}rgba(239, 68, 68, 0.4){% else %}rgba(16, 185, 129, 0.4){% endif %}; color: var(--text-primary);">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="grid-layout">
+  <!-- Left Column: Question List -->
+  <div class="card-box">
+    <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+      <span>Questions List ({{ questions.count }})</span>
+    </h2>
+
+    {% if questions %}
+      {% for question in questions %}
+        <div class="question-item">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h3 style="font-size: 1rem; color: var(--text-primary); font-weight: 600;">
+              Q{{ question.order }}. {{ question.text }}
+            </h3>
+            <form method="post" action="{% url 'quiz:question_delete' question.id %}" style="display: inline;" onsubmit="return confirm('Delete this question?');">
+              {% csrf_token %}
+              <button type="submit" class="btn-delete" title="Delete Question">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </form>
+          </div>
+
+          <ul class="choice-list">
+            {% for choice in question.choices.all %}
+              <li class="choice-item {% if choice.is_correct %}choice-correct{% else %}choice-normal{% endif %}">
+                {% if choice.is_correct %}
+                  <i class="fa-solid fa-circle-check"></i>
+                {% else %}
+                  <i class="fa-regular fa-circle"></i>
+                {% endif %}
+                <span>{{ choice.text }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <i class="fa-solid fa-circle-question" style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+        <p>No questions added yet. Use the form on the right to add your first question!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Column: Add Question Form -->
+  <div class="card-box">
+    <h2 style="font-size: 1.25rem; margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Add New Question
+    </h2>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Question Text *</label>
+        {{ question_form.text }}
+      </div>
+
+      <div class="form-group">
+        <label>Display Order *</label>
+        {{ question_form.order }}
+      </div>
+
+      <h3 style="font-size: 1rem; margin: 1.5rem 0 1rem; color: var(--text-primary);">
+        Answer Options (Mark at least one as Correct)
+      </h3>
+
+      {{ choice_formset.management_form }}
+      {% for choice_form in choice_formset %}
+        <div class="choice-formset-row">
+          <div style="flex: 1;">
+            {{ choice_form.text }}
+          </div>
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
+            {{ choice_form.is_correct }}
+            <span style="color: var(--accent); font-weight: 600;">Correct</span>
+          </label>
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="nav-btn" style="width: 100%; border: none; cursor: pointer; margin-top: 1rem; justify-content: center;">
+        <i class="fa-solid fa-floppy-disk"></i> Save Question & Choices
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

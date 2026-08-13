@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Attempt History — LMS Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+  .history-header {
+    margin-bottom: 2rem;
+  }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+
+  .history-table th, .history-table td {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .history-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .history-table td {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .score-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .score-good {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent);
+  }
+
+  .score-bad {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-header">
+  <h1 style="font-size: 1.75rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+    <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> Quiz Attempt History
+  </h1>
+  <p style="color: var(--text-secondary);">Review your past quiz performances.</p>
+</div>
+
+{% if attempts %}
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>Quiz Title</th>
+        <th>Teacher</th>
+        <th>Submitted Date</th>
+        <th>Correct Answers</th>
+        <th>Score</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for attempt in attempts %}
+        <tr>
+          <td style="color: var(--text-primary); font-weight: 600;">{{ attempt.quiz.title }}</td>
+          <td>{{ attempt.quiz.teacher.get_full_name|default:attempt.quiz.teacher.username }}</td>
+          <td>{{ attempt.submitted_at|date:"M d, Y H:i" }}</td>
+          <td>{{ attempt.correct_answers_count }} / {{ attempt.total_questions_count }}</td>
+          <td>
+            <span class="score-badge {% if attempt.score >= 60 %}score-good{% else %}score-bad{% endif %}">
+              {{ attempt.score|floatformat:1 }}%
+            </span>
+          </td>
+          <td>
+            <a href="{% url 'quiz:attempt_result' attempt.id %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">
+              View Review <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div style="text-align: center; padding: 4rem 2rem; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color);">
+    <i class="fa-solid fa-box-archive" style="font-size: 3.5rem; color: var(--primary); opacity: 0.5; margin-bottom: 1rem;"></i>
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">No Quiz History Found</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">You haven't attempted any quizzes yet.</p>
+    <a href="{% url 'quiz:available_quizzes' %}" class="nav-btn" style="text-decoration: none;">
+      Browse Available Quizzes
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

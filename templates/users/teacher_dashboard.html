@@ -256,14 +256,12 @@
             <i class="fa-solid fa-chart-pie"></i> Dashboard
           </a>
 
-          <a href="#" class="list-group-item disabled-link" id="side-courses">
+          <a href="{% url 'courses:teacher_course_list' %}" class="list-group-item" id="side-courses">
             <i class="fa-solid fa-book-open"></i> My Courses
-            <span class="soon-badge">Soon</span>
           </a>
 
-          <a href="#" class="list-group-item disabled-link" id="side-create-course">
+          <a href="{% url 'courses:teacher_course_create' %}" class="list-group-item" id="side-create-course">
             <i class="fa-solid fa-circle-plus"></i> Create Course
-            <span class="soon-badge">Soon</span>
           </a>
 
           <a href="#" class="list-group-item disabled-link" id="side-lessons">
@@ -271,9 +269,8 @@
             <span class="soon-badge">Soon</span>
           </a>
 
-          <a href="#" class="list-group-item disabled-link" id="side-quizzes">
+          <a href="{% url 'quiz:teacher_quiz_list' %}" class="list-group-item" id="side-quizzes">
             <i class="fa-solid fa-clipboard-question"></i> Quizzes
-            <span class="soon-badge">Soon</span>
           </a>
 
           <a href="#" class="list-group-item disabled-link" id="side-students">
@@ -345,9 +342,9 @@
             </div>
           </div>
           <div class="col-lg-4 col-md-5 text-md-end text-start mt-3 mt-md-0">
-            <span class="btn btn-secondary px-4 py-2 fw-semibold disabled" aria-disabled="true" title="Course creation coming soon">
+            <a href="{% url 'courses:teacher_course_create' %}" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
               <i class="fa-solid fa-plus me-1"></i> Create Course
-            </span>
+            </a>
           </div>
         </div>
       </section>

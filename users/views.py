@@ -36,7 +36,10 @@ from .forms import (
     UserProfileForm,
     UserRegistrationForm,
 )
+from django.db.models import Avg
 from .models import User
+from quiz.models import Attempt, Quiz
+from courses.models import Course
 
 
 # =============================================================================
@@ -249,13 +252,17 @@ class StudentDashboardView(View):
     template_name = 'users/student_dashboard.html'
 
     def get(self, request):
+        attempts = Attempt.objects.filter(student=request.user)
+        attempts_count = attempts.count()
+        avg_score_data = attempts.aggregate(Avg('score'))['score__avg'] or 0.0
+
         context = {
             'user': request.user,
             'page_title': 'Student Dashboard',
-            # Statistics placeholders — will connect to real models in future steps
             'enrolled_courses_count': 0,
-            'quiz_attempts_count': 0,
-            'avg_quiz_score': 0,
+            'quiz_attempts_count': attempts_count,
+            'avg_quiz_score': round(avg_score_data, 1),
+            'recent_attempts': attempts.select_related('quiz')[:5],
         }
         return render(request, self.template_name, context)
 
@@ -273,18 +280,24 @@ class TeacherDashboardView(View):
     template_name = 'users/teacher_dashboard.html'
 
     def get(self, request):
+        teacher_courses = Course.objects.filter(teacher=request.user)
+        total_courses = teacher_courses.count()
+
+        teacher_quizzes = Quiz.objects.filter(teacher=request.user)
+        total_quizzes = teacher_quizzes.count()
+
+        attempts_on_teacher_quizzes = Attempt.objects.filter(quiz__teacher=request.user)
+        avg_score_data = attempts_on_teacher_quizzes.aggregate(Avg('score'))['score__avg'] or 0.0
+
         context = {
             'user': request.user,
             'page_title': 'Teacher Dashboard',
-            # Placeholders — swap for real querysets when models exist:
-            # 'total_courses':  Course.objects.filter(teacher=request.user).count()
-            # 'total_students': Enrollment.objects.filter(course__teacher=request.user).count()
-            # 'total_quizzes':  Quiz.objects.filter(course__teacher=request.user).count()
-            # 'avg_score':      Attempt.objects.filter(...).aggregate(Avg('score'))
-            'total_courses': 0,
-            'total_students': 0,
-            'total_quizzes': 0,
-            'avg_score': 0,
+            'total_courses': total_courses,
+            'total_students': User.objects.filter(role=User.Role.STUDENT).count(),
+            'total_quizzes': total_quizzes,
+            'avg_score': round(avg_score_data, 1),
+            'recent_courses': teacher_courses.order_by('-created_at')[:5],
+            'recent_quizzes': teacher_quizzes.order_by('-created_at')[:5],
         }
         return render(request, self.template_name, context)
 
