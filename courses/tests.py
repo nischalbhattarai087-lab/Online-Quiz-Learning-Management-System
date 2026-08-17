@@ -470,11 +470,12 @@ class EnrollmentModelTest(TestCase):
             student=self.student,
             course=self.course,
         )
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises((IntegrityError, ValidationError)):
             Enrollment.objects.create(
                 student=self.student,
                 course=self.course,
             )
+
 
     def test_3_enrollment_string_representation(self):
         """3. Enrollment string representation works."""
