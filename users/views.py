@@ -39,7 +39,7 @@ from .forms import (
 from django.db.models import Avg
 from .models import User
 from quiz.models import Attempt, Quiz
-from courses.models import Course
+from courses.models import Course, Enrollment
 
 
 # =============================================================================
@@ -256,15 +256,23 @@ class StudentDashboardView(View):
         attempts_count = attempts.count()
         avg_score_data = attempts.aggregate(Avg('score'))['score__avg'] or 0.0
 
+        enrollments = Enrollment.objects.filter(student=request.user, is_active=True).select_related(
+            'course', 'course__category', 'course__teacher'
+        )
+        enrolled_courses_count = enrollments.count()
+        recent_enrollments = enrollments.order_by('-enrolled_at')[:5]
+
         context = {
             'user': request.user,
             'page_title': 'Student Dashboard',
-            'enrolled_courses_count': 0,
+            'enrolled_courses_count': enrolled_courses_count,
             'quiz_attempts_count': attempts_count,
             'avg_quiz_score': round(avg_score_data, 1),
             'recent_attempts': attempts.select_related('quiz')[:5],
+            'recent_enrollments': recent_enrollments,
         }
         return render(request, self.template_name, context)
+
 
 
 # =============================================================================

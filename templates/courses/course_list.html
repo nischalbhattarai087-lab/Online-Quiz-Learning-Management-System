@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Courses Catalogue — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  Browse our catalogue of high-quality courses across programming, cybersecurity, web development, and more.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .catalog-header {
+    text-align: center;
+    padding: 2.5rem 1rem 2rem;
+    margin-bottom: 2rem;
+    background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+  }
+
+  .catalog-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #fff 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .catalog-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+    line-height: 1.6;
+  }
+
+  .filter-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .search-form {
+    display: flex;
+    flex: 1;
+    min-width: 260px;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition-smooth);
+  }
+
+  .search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+
+  .filter-select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .filter-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .course-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .course-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-thumbnail-wrapper {
+    position: relative;
+    width: 100%;
+    height: 190px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+  }
+
+  .card-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .course-card:hover .card-thumbnail {
+    transform: scale(1.04);
+  }
+
+  .card-thumbnail-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+    color: var(--primary);
+    font-size: 3.5rem;
+  }
+
+  .card-badge-category {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(18, 20, 32, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .card-badge-price {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .course-card-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .course-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+
+  .course-card-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .course-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+  }
+
+  .instructor-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+  }
+
+  .instructor-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .badge-difficulty-tag {
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+
+  .pagination-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+  }
+
+  .page-btn {
+    padding: 0.55rem 1.1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+  }
+
+  .page-btn:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  .page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+
+  .empty-catalog {
+    text-align: center;
+    padding: 4.5rem 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="catalog-header" id="catalog-header-section">
+  <h1 class="catalog-title">Explore Our Courses</h1>
+  <p class="catalog-subtitle">
+    Gain in-demand skills with interactive courses designed by industry practitioners.
+  </p>
+</div>
+
+<!-- Search & Filter Controls -->
+<form method="get" action="{% url 'courses:course_list' %}" class="filter-bar" id="course-filter-form">
+  <div class="search-form">
+    <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Search courses, instructors, topics..." class="search-input" id="search-input">
+    <button type="submit" class="nav-btn" style="border:none; cursor:pointer;" id="search-btn">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <select name="category" class="filter-select" onchange="this.form.submit()" id="category-filter">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+        <option value="{{ cat.slug }}" {% if selected_category.slug == cat.slug %}selected{% endif %}>
+          {{ cat.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <select name="difficulty" class="filter-select" onchange="this.form.submit()" id="difficulty-filter">
+      <option value="">All Difficulties</option>
+      <option value="beginner" {% if selected_difficulty == 'beginner' %}selected{% endif %}>Beginner</option>
+      <option value="intermediate" {% if selected_difficulty == 'intermediate' %}selected{% endif %}>Intermediate</option>
+      <option value="advanced" {% if selected_difficulty == 'advanced' %}selected{% endif %}>Advanced</option>
+    </select>
+
+    {% if query or selected_category or selected_difficulty %}
+      <a href="{% url 'courses:course_list' %}" class="nav-btn" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary) !important; text-decoration: none;" title="Reset filters">
+        <i class="fa-solid fa-rotate-left"></i> Clear
+      </a>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Courses Grid -->
+{% if courses %}
+  <div class="course-grid" id="course-grid">
+    {% for course in courses %}
+      <a href="{% url 'courses:course_detail' course.slug %}" class="course-card" id="course-card-{{ course.id }}">
+        <div class="card-thumbnail-wrapper">
+          {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="card-thumbnail">
+          {% else %}
+            <div class="card-thumbnail-placeholder">
+              <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+          {% endif %}
+
+          {% if course.category %}
+            <span class="card-badge-category">
+              <i class="fa-solid fa-tag me-1"></i> {{ course.category.name }}
+            </span>
+          {% endif %}
+
+          <span class="card-badge-price">
+            {% if course.price > 0 %}${{ course.price }}{% else %}Free{% endif %}
+          </span>
+        </div>
+
+        <div class="course-card-body">
+          <div>
+            <h2 class="course-card-title">{{ course.title }}</h2>
+            <p class="course-card-desc">{{ course.description|default:"No description provided." }}</p>
+          </div>
+
+          <div class="course-card-meta">
+            <div class="instructor-info">
+              <div class="instructor-avatar">
+                {{ course.teacher.first_name|first|default:course.teacher.username|first|upper }}
+              </div>
+              <span>{{ course.teacher.full_name }}</span>
+            </div>
+            <span class="badge-difficulty-tag">{{ course.get_difficulty_display }}</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="page-btn">&laquo; Previous</a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="page-btn active">{{ num }}</span>
+        {% else %}
+          <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category %}&category={{ selected_category.slug }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}" class="page-btn">Next &raquo;</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-catalog" id="empty-catalog-state">
+    <i class="fa-solid fa-magnifying-glass" style="font-size: 3.5rem; color: var(--primary); opacity: 0.5; margin-bottom: 1.25rem;"></i>
+    <h2 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5rem;">No Courses Found</h2>
+    <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 1.5rem;">
+      We couldn't find any courses matching your search criteria. Try adjusting your search keywords or clearing the filters.
+    </p>
+    <a href="{% url 'courses:course_list' %}" class="nav-btn" style="text-decoration: none;">
+      <i class="fa-solid fa-arrows-rotate me-1"></i> View All Courses
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

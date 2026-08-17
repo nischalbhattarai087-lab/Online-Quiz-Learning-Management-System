@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from users.models import User
-from .models import Category, Course
+from .models import Category, Course, Enrollment
 
 
 class CategoryModelTest(TestCase):
@@ -423,3 +423,381 @@ class TeacherCourseCRUDTest(TestCase):
         self.assertTrue(login_success)
         response = self.client.post(reverse('users:logout'))
         self.assertEqual(response.status_code, 302)
+
+
+# =============================================================================
+# Enrollment Model & Integration Tests (Prompt 17)
+# =============================================================================
+
+class EnrollmentModelTest(TestCase):
+    """
+    Unit tests for the Enrollment model.
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='instructor_bob',
+            email='bob@example.com',
+            password='Password123!',
+            role=User.Role.TEACHER,
+        )
+        self.student = User.objects.create_user(
+            username='student_eva',
+            email='eva@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.course = Course.objects.create(
+            title='Intro to Cybersecurity',
+            teacher=self.teacher,
+            is_published=True,
+        )
+
+    def test_1_enrollment_creation(self):
+        """1. Enrollment can be created successfully."""
+        enrollment = Enrollment.objects.create(
+            student=self.student,
+            course=self.course,
+        )
+        self.assertEqual(enrollment.student, self.student)
+        self.assertEqual(enrollment.course, self.course)
+        self.assertTrue(enrollment.is_active)
+        self.assertIsNotNone(enrollment.enrolled_at)
+
+    def test_2_duplicate_student_course_enrollment_prevented(self):
+        """2. Duplicate Student + Course enrollment is prevented (unique constraint)."""
+        Enrollment.objects.create(
+            student=self.student,
+            course=self.course,
+        )
+        with self.assertRaises(IntegrityError):
+            Enrollment.objects.create(
+                student=self.student,
+                course=self.course,
+            )
+
+    def test_3_enrollment_string_representation(self):
+        """3. Enrollment string representation works."""
+        enrollment = Enrollment.objects.create(
+            student=self.student,
+            course=self.course,
+        )
+        expected = f"{self.student.username} enrolled in {self.course.title}"
+        self.assertEqual(str(enrollment), expected)
+
+
+class StudentCourseEnrollmentTest(TestCase):
+    """
+    Tests for student course enrollment workflow and security.
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='teacher_dave',
+            email='dave@example.com',
+            password='Password123!',
+            role=User.Role.TEACHER,
+        )
+        self.student1 = User.objects.create_user(
+            username='student_sarah',
+            email='sarah@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.student2 = User.objects.create_user(
+            username='student_mike',
+            email='mike@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.admin = User.objects.create_user(
+            username='admin_boss',
+            email='admin@example.com',
+            password='Password123!',
+            role=User.Role.ADMIN,
+        )
+        self.published_course = Course.objects.create(
+            title='Python Full Stack Bootcamp',
+            teacher=self.teacher,
+            is_published=True,
+        )
+        self.unpublished_course = Course.objects.create(
+            title='Draft AI Course',
+            teacher=self.teacher,
+            is_published=False,
+        )
+
+    def test_4_student_can_enroll_in_published_course(self):
+        """4. Student can enroll in a published course via POST."""
+        self.client.login(username='student_sarah', password='Password123!')
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('courses:student_courses'))
+
+        # Check DB
+        self.assertTrue(
+            Enrollment.objects.filter(
+                student=self.student1,
+                course=self.published_course,
+                is_active=True,
+            ).exists()
+        )
+
+    def test_5_student_cannot_enroll_twice_in_same_course(self):
+        """5. Student cannot enroll twice; duplicate POST is handled gracefully without crash."""
+        self.client.login(username='student_sarah', password='Password123!')
+        # First enrollment
+        self.client.post(reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug}))
+        self.assertEqual(Enrollment.objects.filter(student=self.student1, course=self.published_course).count(), 1)
+
+        # Second enrollment attempt
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Enrollment.objects.filter(student=self.student1, course=self.published_course).count(), 1)
+
+    def test_6_student_cannot_enroll_in_unpublished_course(self):
+        """6. Student cannot enroll in an unpublished course (returns 404)."""
+        self.client.login(username='student_sarah', password='Password123!')
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.unpublished_course.slug})
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(
+            Enrollment.objects.filter(student=self.student1, course=self.unpublished_course).exists()
+        )
+
+    def test_7_teacher_cannot_enroll_through_student_endpoint(self):
+        """7. Teacher cannot enroll (403 Forbidden)."""
+        self.client.login(username='teacher_dave', password='Password123!')
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Enrollment.objects.filter(course=self.published_course).exists())
+
+    def test_8_admin_cannot_enroll_through_student_endpoint(self):
+        """8. Admin cannot enroll through the Student endpoint (403 Forbidden)."""
+        self.client.login(username='admin_boss', password='Password123!')
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Enrollment.objects.filter(course=self.published_course).exists())
+
+    def test_9_unauthenticated_user_redirected_to_login(self):
+        """9. Unauthenticated user is redirected to login (302)."""
+        response = self.client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('users:login'), response.url)
+
+    def test_10_post_required_for_enrollment_action(self):
+        """10. GET request does not enroll and redirects back to course detail."""
+        self.client.login(username='student_sarah', password='Password123!')
+        response = self.client.get(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(
+            response,
+            reverse('courses:course_detail', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertFalse(
+            Enrollment.objects.filter(student=self.student1, course=self.published_course).exists()
+        )
+
+    def test_11_csrf_protection_enabled_on_enrollment(self):
+        """11. CSRF protection is active for enrollment endpoint."""
+        csrf_client = self.client_class(enforce_csrf_checks=True)
+        csrf_client.login(username='student_sarah', password='Password123!')
+        # Post without CSRF token
+        response = csrf_client.post(
+            reverse('courses:enroll_course', kwargs={'slug': self.published_course.slug})
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class MyCoursesViewTest(TestCase):
+    """
+    Tests for the Student My Courses page (/student/courses/).
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='instructor_tom',
+            email='tom@example.com',
+            password='Password123!',
+            role=User.Role.TEACHER,
+        )
+        self.student_a = User.objects.create_user(
+            username='student_alice_mc',
+            email='alice_mc@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.student_b = User.objects.create_user(
+            username='student_bob_mc',
+            email='bob_mc@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.course_python = Course.objects.create(
+            title='Python 101',
+            teacher=self.teacher,
+            is_published=True,
+        )
+        self.course_django = Course.objects.create(
+            title='Django 101',
+            teacher=self.teacher,
+            is_published=True,
+        )
+
+    def test_12_student_can_view_their_enrolled_courses(self):
+        """12. Student can view their enrolled courses."""
+        Enrollment.objects.create(student=self.student_a, course=self.course_python)
+        self.client.login(username='student_alice_mc', password='Password123!')
+        response = self.client.get(reverse('courses:student_courses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Python 101')
+        self.assertContains(response, 'My Courses')
+
+    def test_13_student_cannot_see_another_students_courses(self):
+        """13. Student cannot see another Student's courses."""
+        Enrollment.objects.create(student=self.student_b, course=self.course_django)
+
+        # Student A logs in (enrolled only in Python)
+        Enrollment.objects.create(student=self.student_a, course=self.course_python)
+        self.client.login(username='student_alice_mc', password='Password123!')
+        response = self.client.get(reverse('courses:student_courses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Python 101')
+        self.assertNotContains(response, 'Django 101')
+
+    def test_14_only_active_enrollments_shown(self):
+        """14. Inactive enrollments are excluded from My Courses."""
+        Enrollment.objects.create(student=self.student_a, course=self.course_python, is_active=False)
+        self.client.login(username='student_alice_mc', password='Password123!')
+        response = self.client.get(reverse('courses:student_courses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Python 101')
+
+    def test_15_empty_enrollment_state_works(self):
+        """15. Empty enrollment state shows helpful message and Browse Courses button."""
+        self.client.login(username='student_alice_mc', password='Password123!')
+        response = self.client.get(reverse('courses:student_courses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "You haven't enrolled in any courses yet.")
+        self.assertContains(response, reverse('courses:course_list'))
+
+
+class CourseDetailEnrollmentStatusTest(TestCase):
+    """
+    Tests for course detail page enrollment button status.
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='instructor_rachel',
+            email='rachel@example.com',
+            password='Password123!',
+            role=User.Role.TEACHER,
+        )
+        self.student = User.objects.create_user(
+            username='student_emma',
+            email='emma@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.course = Course.objects.create(
+            title='Data Science Essentials',
+            teacher=self.teacher,
+            is_published=True,
+        )
+
+    def test_16_unenrolled_student_sees_enroll_now_button(self):
+        """16. Unenrolled Student sees 'Enroll Now' button."""
+        self.client.login(username='student_emma', password='Password123!')
+        response = self.client.get(reverse('courses:course_detail', kwargs={'slug': self.course.slug}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Enroll Now')
+        self.assertNotContains(response, 'Enrolled')
+
+    def test_17_enrolled_student_sees_enrolled_badge(self):
+        """17. Enrolled Student sees 'Enrolled' badge and 'Go to My Courses' link."""
+        Enrollment.objects.create(student=self.student, course=self.course)
+        self.client.login(username='student_emma', password='Password123!')
+        response = self.client.get(reverse('courses:course_detail', kwargs={'slug': self.course.slug}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Enrolled')
+        self.assertContains(response, 'Go to My Courses')
+
+    def test_18_enrollment_status_correct_for_each_student(self):
+        """18. Enrollment status is isolated and correct per student."""
+        other_student = User.objects.create_user(
+            username='student_lucas',
+            email='lucas@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        Enrollment.objects.create(student=other_student, course=self.course)
+
+        # Emma is not enrolled
+        self.client.login(username='student_emma', password='Password123!')
+        response = self.client.get(reverse('courses:course_detail', kwargs={'slug': self.course.slug}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Enroll Now')
+
+
+class StudentDashboardEnrollmentIntegrationTest(TestCase):
+    """
+    Tests for Student Dashboard integration with real enrollment metrics.
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='teacher_dash',
+            email='dash_teacher@example.com',
+            password='Password123!',
+            role=User.Role.TEACHER,
+        )
+        self.student = User.objects.create_user(
+            username='student_dash',
+            email='dash_student@example.com',
+            password='Password123!',
+            role=User.Role.STUDENT,
+        )
+        self.course1 = Course.objects.create(
+            title='Course Alpha',
+            teacher=self.teacher,
+            is_published=True,
+        )
+        self.course2 = Course.objects.create(
+            title='Course Beta',
+            teacher=self.teacher,
+            is_published=True,
+        )
+
+    def test_19_student_dashboard_displays_real_enrolled_courses_count(self):
+        """19. Student Dashboard displays accurate count of enrolled courses."""
+        self.client.login(username='student_dash', password='Password123!')
+
+        # 0 courses
+        response = self.client.get(reverse('student_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['enrolled_courses_count'], 0)
+
+        # Enroll in 2 courses
+        Enrollment.objects.create(student=self.student, course=self.course1)
+        Enrollment.objects.create(student=self.student, course=self.course2)
+
+        response = self.client.get(reverse('student_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['enrolled_courses_count'], 2)
+        self.assertContains(response, 'Course Alpha')
+        self.assertContains(response, 'Course Beta')
+

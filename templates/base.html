@@ -297,7 +297,7 @@
             </a>
             <ul class="nav-links">
                 <li><a href="/" id="link-home">Home</a></li>
-                <li><a href="#" id="link-courses">Courses</a></li>
+                <li><a href="{% url 'courses:course_list' %}" id="link-courses">Courses</a></li>
                 {% if user.is_authenticated %}
                     {% if user.role == 'student' %}
                         <li><a href="{% url 'quiz:available_quizzes' %}" id="link-quizzes">Quizzes</a></li>
@@ -359,10 +359,11 @@
             <div class="footer-links">
                 <h4>Platform</h4>
                 <ul>
-                    <li><a href="#">Courses</a></li>
-                    <li><a href="#">Online Quizzes</a></li>
+                    <li><a href="{% url 'courses:course_list' %}">Courses</a></li>
+                    <li><a href="{% url 'quiz:available_quizzes' %}">Online Quizzes</a></li>
                     <li><a href="#">Leaderboard</a></li>
                 </ul>
+
             </div>
             <div class="footer-links">
                 <h4>Support</h4>

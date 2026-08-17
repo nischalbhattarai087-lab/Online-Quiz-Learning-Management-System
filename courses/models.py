@@ -143,3 +143,61 @@ class Course(models.Model):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+
+class Enrollment(models.Model):
+    """
+    Represents a student's enrollment in a course.
+    Enforces that only Students can enroll and each student can enroll at most once per course.
+    """
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='enrollments',
+        verbose_name='Student',
+        help_text='Student enrolled in the course.',
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='enrollments',
+        verbose_name='Course',
+    )
+    enrolled_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Enrolled At',
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Is Active',
+        help_text='Indicates whether the student enrollment is currently active.',
+    )
+
+    class Meta:
+        verbose_name = 'Enrollment'
+        verbose_name_plural = 'Enrollments'
+        ordering = ['-enrolled_at']
+        unique_together = ('student', 'course')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'course'],
+                name='unique_student_course_enrollment',
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.student.username} enrolled in {self.course.title}"
+
+    def clean(self):
+        super().clean()
+        if self.student_id and hasattr(self.student, 'role'):
+            from users.models import User
+            if self.student.role != User.Role.STUDENT:
+                raise ValidationError({
+                    'student': 'Only users with the Student role can enroll in courses.'
+                })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from users.models import User
-from .models import Category, Course
+from .models import Category, Course, Enrollment
 
 
 @admin.register(Category)
@@ -43,3 +43,24 @@ class CourseAdmin(admin.ModelAdmin):
         if db_field.name == 'teacher':
             kwargs['queryset'] = User.objects.filter(role=User.Role.TEACHER)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = ('student', 'course', 'is_active', 'enrolled_at')
+    list_filter = ('is_active', 'enrolled_at')
+    search_fields = (
+        'student__username',
+        'student__email',
+        'student__first_name',
+        'student__last_name',
+        'course__title',
+    )
+    ordering = ('-enrolled_at',)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Restrict student selection in Admin dropdown to users with the Student role."""
+        if db_field.name == 'student':
+            kwargs['queryset'] = User.objects.filter(role=User.Role.STUDENT)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+

@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  {{ course.description|truncatewords:30 }}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .breadcrumb-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+  }
+
+  .breadcrumb-nav a:hover {
+    color: var(--primary);
+  }
+
+  .course-hero-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
+  .hero-media {
+    width: 100%;
+    height: 320px;
+    background: var(--bg-tertiary);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+    font-size: 5rem;
+    color: var(--primary);
+  }
+
+  .hero-content {
+    padding: 2.25rem;
+  }
+
+  .course-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .badge-tag {
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .badge-cat {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+  }
+
+  .badge-diff {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    text-transform: capitalize;
+  }
+
+  .course-headline {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .course-meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.75rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .meta-icon {
+    color: var(--primary);
+    font-size: 1.1rem;
+  }
+
+  .enrollment-action-box {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .price-tag-display {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+
+  .btn-enroll {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 0.85rem 2rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
+    transition: var(--transition-smooth);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .btn-enroll:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+  }
+
+  .badge-enrolled-state {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-my-courses {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-my-courses:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  .description-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-heading {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .desc-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.8;
+    white-space: pre-line;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-wrapper" id="course-detail-root">
+
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb-nav" aria-label="breadcrumb">
+    <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+    <span>/</span>
+    <a href="{% url 'courses:course_list' %}">Courses</a>
+    <span>/</span>
+    <span style="color: var(--text-primary);">{{ course.title }}</span>
+  </nav>
+
+  {% if messages %}
+    <div style="margin-bottom: 1.5rem;">
+      {% for message in messages %}
+        <div style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 0.75rem; background: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.2){% elif message.tags == 'info' %}rgba(99, 102, 241, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %}; border: 1px solid {% if message.tags == 'error' %}rgba(239, 68, 68, 0.4){% elif message.tags == 'info' %}rgba(99, 102, 241, 0.4){% else %}rgba(16, 185, 129, 0.4){% endif %}; color: var(--text-primary); display:flex; align-items:center; gap:0.5rem;" role="alert">
+          <i class="fa-solid fa-circle-info"></i> {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Course Hero -->
+  <div class="course-hero-card">
+    <div class="hero-media">
+      {% if course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="hero-img">
+      {% else %}
+        <div class="hero-placeholder">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="hero-content">
+      <div class="course-badges-row">
+        {% if course.category %}
+          <span class="badge-tag badge-cat">
+            <i class="fa-solid fa-folder me-1"></i> {{ course.category.name }}
+          </span>
+        {% endif %}
+        <span class="badge-tag badge-diff">
+          <i class="fa-solid fa-signal me-1"></i> {{ course.get_difficulty_display }}
+        </span>
+      </div>
+
+      <h1 class="course-headline" id="course-title">{{ course.title }}</h1>
+
+      <div class="course-meta-bar">
+        <div class="meta-item">
+          <i class="fa-solid fa-chalkboard-user meta-icon"></i>
+          <span>Instructor: <strong>{{ course.teacher.full_name }}</strong></span>
+        </div>
+        <div class="meta-item">
+          <i class="fa-solid fa-calendar-plus meta-icon"></i>
+          <span>Published: <strong>{{ course.created_at|date:"M d, Y" }}</strong></span>
+        </div>
+      </div>
+
+      <!-- Enrollment CTA Box -->
+      <div class="enrollment-action-box" id="enrollment-action-section">
+        <div>
+          <span style="font-size: 0.85rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Course Tuition</span>
+          <div class="price-tag-display" id="course-price">
+            {% if course.price > 0 %}${{ course.price }}{% else %}Free Course{% endif %}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          {% if user.is_authenticated %}
+            {% if user.role == 'student' %}
+              {% if is_enrolled %}
+                <div class="badge-enrolled-state" id="badge-enrolled">
+                  <i class="fa-solid fa-circle-check"></i> Enrolled
+                </div>
+                <a href="{% url 'courses:student_courses' %}" class="btn-my-courses" id="link-go-to-my-courses">
+                  <i class="fa-solid fa-book-open"></i> Go to My Courses
+                </a>
+              {% else %}
+                <form method="post" action="{% url 'courses:enroll_course' course.slug %}" class="m-0" id="enroll-form">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-enroll" id="btn-enroll-now">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Enroll Now
+                  </button>
+                </form>
+              {% endif %}
+            {% elif user.role == 'teacher' or user.role == 'admin' %}
+              <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);">
+                <i class="fa-solid fa-user-shield me-1"></i> Logged in as {{ user.get_role_display }} (Enrollment is for Students)
+              </span>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'users:login' %}?next={{ request.path }}" class="btn-enroll" id="btn-login-to-enroll" style="text-decoration: none;">
+              <i class="fa-solid fa-right-to-bracket"></i> Sign In to Enroll
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Course Description & Learning Objectives -->
+  <div class="description-card">
+    <h2 class="section-heading">
+      <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Course Description
+    </h2>
+    <div class="desc-text" id="course-description">
+      {{ course.description|default:"No detailed description provided for this course yet." }}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

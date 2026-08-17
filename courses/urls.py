@@ -5,6 +5,14 @@ app_name = 'courses'
 
 urlpatterns = [
     # ------------------------------------------------------------------
+    # Public / Student Course Browsing & Enrollment
+    # ------------------------------------------------------------------
+    path('courses/', views.CourseListView.as_view(), name='course_list'),
+    path('courses/<slug:slug>/', views.CourseDetailView.as_view(), name='course_detail'),
+    path('courses/<slug:slug>/enroll/', views.CourseEnrollView.as_view(), name='enroll_course'),
+    path('student/courses/', views.StudentCourseListView.as_view(), name='student_courses'),
+
+    # ------------------------------------------------------------------
     # Teacher Course CRUD
     # ------------------------------------------------------------------
     path('teacher/courses/', views.TeacherCourseListView.as_view(), name='teacher_course_list'),
@@ -15,3 +23,4 @@ urlpatterns = [
     path('teacher/courses/<slug:slug>/publish/', views.TeacherCoursePublishView.as_view(), name='teacher_course_publish'),
     path('teacher/courses/<slug:slug>/unpublish/', views.TeacherCourseUnpublishView.as_view(), name='teacher_course_unpublish'),
 ]
+

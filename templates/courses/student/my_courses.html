@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}My Enrolled Courses — LMS Portal{% endblock %}
+
+{% block meta_description %}
+  Access and continue your enrolled courses on the LMS platform.
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .my-courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .my-courses-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.75rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .enrolled-course-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  .enrolled-course-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-thumb-box {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+  }
+
+  .card-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+    font-size: 3.5rem;
+    color: var(--primary);
+  }
+
+  .badge-category {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(18, 20, 32, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .badge-active-status {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  }
+
+  .card-content-body {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .card-title-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.35;
+  }
+
+  .card-meta-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+  }
+
+  .card-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .badge-diff-pill {
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+
+  .enrollment-date-row {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .btn-view-course {
+    width: 100%;
+    text-align: center;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: #fff !important;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  }
+
+  .btn-view-course:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.55);
+  }
+
+  .empty-state-box {
+    text-align: center;
+    padding: 4.5rem 2rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+  }
+
+  .pagination-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+  }
+
+  .page-btn {
+    padding: 0.55rem 1.1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+  }
+
+  .page-btn:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+
+  .page-btn.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="my-courses-header" id="my-courses-header">
+  <div>
+    <h1 class="my-courses-title">
+      <i class="fa-solid fa-book-open text-primary me-2"></i> My Courses
+    </h1>
+    <p style="color: var(--text-secondary); margin: 0;">
+      All courses you are currently enrolled in.
+    </p>
+  </div>
+  <a href="{% url 'courses:course_list' %}" class="nav-btn" style="text-decoration: none;" id="btn-browse-more">
+    <i class="fa-solid fa-compass me-1"></i> Browse More Courses
+  </a>
+</div>
+
+{% if messages %}
+  <div style="margin-bottom: 1.5rem;">
+    {% for message in messages %}
+      <div style="padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 0.75rem; background: {% if message.tags == 'error' %}rgba(239, 68, 68, 0.2){% elif message.tags == 'info' %}rgba(99, 102, 241, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %}; border: 1px solid {% if message.tags == 'error' %}rgba(239, 68, 68, 0.4){% elif message.tags == 'info' %}rgba(99, 102, 241, 0.4){% else %}rgba(16, 185, 129, 0.4){% endif %}; color: var(--text-primary); display:flex; align-items:center; gap:0.5rem;" role="alert">
+        <i class="fa-solid fa-circle-check"></i> {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if enrollments %}
+  <div class="course-grid" id="enrolled-course-grid">
+    {% for enrollment in enrollments %}
+      {% with course=enrollment.course %}
+        <div class="enrolled-course-card" id="enrollment-card-{{ enrollment.id }}">
+          <div class="card-thumb-box">
+            {% if course.thumbnail %}
+              <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="card-thumb-img">
+            {% else %}
+              <div class="card-thumb-placeholder">
+                <i class="fa-solid fa-graduation-cap"></i>
+              </div>
+            {% endif %}
+
+            {% if course.category %}
+              <span class="badge-category">
+                <i class="fa-solid fa-folder me-1"></i> {{ course.category.name }}
+              </span>
+            {% endif %}
+
+            <span class="badge-active-status">
+              <i class="fa-solid fa-circle-check me-1"></i> Active
+            </span>
+          </div>
+
+          <div class="card-content-body">
+            <div>
+              <h2 class="card-title-text">{{ course.title }}</h2>
+
+              <div class="card-meta-list">
+                <div class="card-meta-row">
+                  <span><i class="fa-solid fa-chalkboard-user text-primary me-1"></i> Instructor:</span>
+                  <span class="text-white fw-semibold">{{ course.teacher.full_name }}</span>
+                </div>
+                <div class="card-meta-row">
+                  <span><i class="fa-solid fa-signal text-secondary me-1"></i> Difficulty:</span>
+                  <span class="badge-diff-pill">{{ course.get_difficulty_display }}</span>
+                </div>
+                <div class="card-meta-row">
+                  <span><i class="fa-solid fa-tag text-success me-1"></i> Tuition:</span>
+                  <span class="text-white">{% if course.price > 0 %}${{ course.price }}{% else %}Free{% endif %}</span>
+                </div>
+              </div>
+
+              <div class="enrollment-date-row">
+                <i class="fa-solid fa-calendar-check text-primary me-1"></i> Enrolled: {{ enrollment.enrolled_at|date:"F j, Y" }}
+              </div>
+            </div>
+
+            <a href="{% url 'courses:course_detail' course.slug %}" class="btn-view-course" id="link-view-course-{{ course.id }}">
+              <i class="fa-solid fa-eye"></i> View Course
+            </a>
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+    <div class="pagination-wrap">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="page-btn">&laquo; Previous</a>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="page-btn active">{{ num }}</span>
+        {% else %}
+          <a href="?page={{ num }}" class="page-btn">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="page-btn">Next &raquo;</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="empty-state-box" id="empty-enrolled-state">
+    <i class="fa-solid fa-book-open-reader" style="font-size: 3.5rem; color: var(--primary); opacity: 0.5; margin-bottom: 1.25rem;"></i>
+    <h2 style="font-size: 1.6rem; color: var(--text-primary); margin-bottom: 0.5rem;">You haven't enrolled in any courses yet.</h2>
+    <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 1.5rem;">
+      Explore our published catalogue of courses and start learning new skills today.
+    </p>
+    <a href="{% url 'courses:course_list' %}" class="nav-btn" style="text-decoration: none;" id="btn-browse-empty">
+      <i class="fa-solid fa-compass me-1"></i> Browse Courses
+    </a>
+  </div>
+{% endif %}
+{% endblock %}
