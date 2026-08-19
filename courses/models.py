@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.utils.text import slugify
 
@@ -201,3 +201,108 @@ class Enrollment(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+
+class Lesson(models.Model):
+    """
+    Represents a single lesson within a Course.
+
+    Each lesson belongs to exactly one Course and has an ordering position.
+    Supports text content, external video URLs, and uploaded PDF files.
+    """
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='lessons',
+        verbose_name='Course',
+    )
+    title = models.CharField(
+        max_length=255,
+        verbose_name='Lesson Title',
+    )
+    slug = models.SlugField(
+        max_length=255,
+        blank=True,
+        help_text='URL-friendly lesson identifier. Unique per course.',
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name='Lesson Description',
+    )
+    content = models.TextField(
+        blank=True,
+        verbose_name='Lesson Content',
+        help_text='Written lesson notes or text material.',
+    )
+    video_url = models.URLField(
+        blank=True,
+        verbose_name='Video URL',
+        help_text='External video URL (e.g. YouTube).',
+        validators=[URLValidator()],
+    )
+    pdf_file = models.FileField(
+        upload_to='lessons/pdfs/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+        verbose_name='PDF Document',
+        help_text='Upload a PDF document for this lesson.',
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Lesson Order',
+        help_text='Position of this lesson within the course.',
+    )
+    is_published = models.BooleanField(
+        default=False,
+        verbose_name='Is Published',
+        help_text='Only published lessons will be visible to students.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Lesson'
+        verbose_name_plural = 'Lessons'
+        ordering = ['course', 'order']
+        # Ensure no two lessons in the same course share the same order
+        unique_together = ('course', 'order')
+        constraints = [
+            # Ensure no two lessons in the same course share the same slug
+            models.UniqueConstraint(
+                fields=['course', 'slug'],
+                name='unique_lesson_slug_per_course',
+            ),
+            # Ensure no two lessons in the same course share the same order
+            models.UniqueConstraint(
+                fields=['course', 'order'],
+                name='unique_lesson_order_per_course',
+            ),
+        ]
+
+    def __str__(self):
+        return f"Lesson {self.order}: {self.title}"
+
+    def clean(self):
+        super().clean()
+
+        # Title must not be blank or whitespace-only
+        if not self.title or not self.title.strip():
+            raise ValidationError({
+                'title': 'Lesson title is required.',
+            })
+
+        # Order must be a positive integer (PositiveIntegerField handles >=0,
+        # but 0 is not a meaningful lesson position)
+        if self.order is not None and self.order < 1:
+            raise ValidationError({
+                'order': 'Lesson order must be 1 or greater.',
+            })
+
+    def save(self, *args, **kwargs):
+        # Auto-generate slug from title if not provided
+        if not self.slug:
+            self.slug = slugify(self.title) or 'lesson'
+
+        self.full_clean()
+        super().save(*args, **kwargs)

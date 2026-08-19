@@ -1,6 +1,6 @@
 from django.contrib import admin
 from users.models import User
-from .models import Category, Course, Enrollment
+from .models import Category, Course, Enrollment, Lesson
 
 
 @admin.register(Category)
@@ -64,3 +64,25 @@ class EnrollmentAdmin(admin.ModelAdmin):
             kwargs['queryset'] = User.objects.filter(role=User.Role.STUDENT)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'course',
+        'order',
+        'is_published',
+        'created_at',
+    )
+    list_filter = (
+        'course',
+        'is_published',
+        'created_at',
+    )
+    search_fields = (
+        'title',
+        'description',
+        'course__title',
+    )
+    ordering = ('course', 'order')
+    prepopulated_fields = {'slug': ('title',)}

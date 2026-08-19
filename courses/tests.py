@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from users.models import User
-from .models import Category, Course, Enrollment
+from .models import Category, Course, Enrollment, Lesson
 
 
 class CategoryModelTest(TestCase):
@@ -802,3 +802,174 @@ class StudentDashboardEnrollmentIntegrationTest(TestCase):
         self.assertContains(response, 'Course Alpha')
         self.assertContains(response, 'Course Beta')
 
+
+class LessonModelTest(TestCase):
+    """
+    Tests for the Lesson model: creation, relationships, ordering,
+    slug uniqueness, file validation, cascade deletion, and timestamps.
+    """
+
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            username='lesson_teacher',
+            email='lessonteacher@example.com',
+            password='Password123!',
+            first_name='Lesson',
+            last_name='Teacher',
+            role=User.Role.TEACHER,
+        )
+        self.category = Category.objects.create(
+            name='Lesson Testing Category',
+            description='For lesson tests',
+        )
+        self.course_a = Course.objects.create(
+            title='Course A for Lessons',
+            teacher=self.teacher,
+            category=self.category,
+        )
+        self.course_b = Course.objects.create(
+            title='Course B for Lessons',
+            teacher=self.teacher,
+            category=self.category,
+        )
+
+    def test_1_lesson_can_be_created(self):
+        """1. Lesson can be created."""
+        lesson = Lesson.objects.create(
+            course=self.course_a,
+            title='Introduction to Python',
+            description='First lesson overview',
+            order=1,
+        )
+        self.assertEqual(lesson.title, 'Introduction to Python')
+        self.assertEqual(Lesson.objects.count(), 1)
+
+    def test_2_lesson_belongs_to_correct_course(self):
+        """2. Lesson belongs to the correct Course."""
+        lesson = Lesson.objects.create(
+            course=self.course_a,
+            title='Lesson in Course A',
+            order=1,
+        )
+        self.assertEqual(lesson.course, self.course_a)
+        self.assertIn(lesson, self.course_a.lessons.all())
+        self.assertNotIn(lesson, self.course_b.lessons.all())
+
+    def test_3_multiple_lessons_belong_to_one_course(self):
+        """3. Multiple lessons can belong to one Course."""
+        Lesson.objects.create(course=self.course_a, title='Lesson 1', order=1)
+        Lesson.objects.create(course=self.course_a, title='Lesson 2', order=2)
+        Lesson.objects.create(course=self.course_a, title='Lesson 3', order=3)
+        self.assertEqual(self.course_a.lessons.count(), 3)
+
+    def test_4_lesson_ordering_works(self):
+        """4. Lesson ordering works (ordered by course, then order)."""
+        l3 = Lesson.objects.create(course=self.course_a, title='Third', order=3)
+        l1 = Lesson.objects.create(course=self.course_a, title='First', order=1)
+        l2 = Lesson.objects.create(course=self.course_a, title='Second', order=2)
+        lessons = list(Lesson.objects.filter(course=self.course_a))
+        self.assertEqual(lessons, [l1, l2, l3])
+
+    def test_5_same_order_in_different_courses(self):
+        """5. Same order number can be used in different Courses."""
+        lesson_a = Lesson.objects.create(
+            course=self.course_a, title='Intro A', order=1,
+        )
+        lesson_b = Lesson.objects.create(
+            course=self.course_b, title='Intro B', order=1,
+        )
+        self.assertEqual(lesson_a.order, 1)
+        self.assertEqual(lesson_b.order, 1)
+
+    def test_6_duplicate_order_within_same_course_rejected(self):
+        """6. Duplicate order within the same Course is rejected."""
+        Lesson.objects.create(
+            course=self.course_a, title='Lesson One', order=1,
+        )
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Lesson.objects.create(
+                course=self.course_a, title='Another Lesson One', order=1,
+            )
+
+    def test_7_lesson_slug_works(self):
+        """7. Lesson slug is auto-generated from title."""
+        lesson = Lesson.objects.create(
+            course=self.course_a,
+            title='Getting Started with Django',
+            order=1,
+        )
+        self.assertEqual(lesson.slug, 'getting-started-with-django')
+
+    def test_8_same_slug_in_different_courses(self):
+        """8. Same slug can exist in different Courses."""
+        Lesson.objects.create(
+            course=self.course_a, title='Introduction', order=1,
+        )
+        lesson_b = Lesson.objects.create(
+            course=self.course_b, title='Introduction', order=1,
+        )
+        self.assertEqual(lesson_b.slug, 'introduction')
+
+    def test_9_duplicate_course_slug_rejected(self):
+        """9. Duplicate Course + slug combination is rejected."""
+        Lesson.objects.create(
+            course=self.course_a, title='Introduction', slug='introduction', order=1,
+        )
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Lesson.objects.create(
+                course=self.course_a, title='Another Intro', slug='introduction', order=2,
+            )
+
+    def test_10_new_lessons_are_unpublished_by_default(self):
+        """10. New lessons are unpublished by default."""
+        lesson = Lesson.objects.create(
+            course=self.course_a, title='Draft Lesson', order=1,
+        )
+        self.assertFalse(lesson.is_published)
+
+    def test_11_pdf_file_validation_works(self):
+        """11. PDF file validation works (valid PDF extension accepted)."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        pdf_file = SimpleUploadedFile('lesson.pdf', b'%PDF-1.4 test content', content_type='application/pdf')
+        lesson = Lesson.objects.create(
+            course=self.course_a,
+            title='PDF Lesson',
+            order=1,
+            pdf_file=pdf_file,
+        )
+        self.assertIsNotNone(lesson.pdf_file)
+        self.assertTrue(lesson.pdf_file.name.endswith('.pdf'))
+
+    def test_12_invalid_file_types_rejected(self):
+        """12. Invalid file types are rejected."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        exe_file = SimpleUploadedFile('malware.exe', b'MZ\x00\x00', content_type='application/octet-stream')
+        with self.assertRaises(ValidationError):
+            Lesson.objects.create(
+                course=self.course_a,
+                title='Bad File Lesson',
+                order=1,
+                pdf_file=exe_file,
+            )
+
+    def test_13_lesson_deleted_when_course_deleted(self):
+        """13. Lesson is deleted when its Course is deleted (CASCADE)."""
+        Lesson.objects.create(course=self.course_a, title='Will be deleted', order=1)
+        self.assertEqual(Lesson.objects.count(), 1)
+        self.course_a.delete()
+        self.assertEqual(Lesson.objects.count(), 0)
+
+    def test_14_created_at_and_updated_at_work(self):
+        """14. created_at and updated_at are set automatically."""
+        lesson = Lesson.objects.create(
+            course=self.course_a, title='Timestamp Lesson', order=1,
+        )
+        self.assertIsNotNone(lesson.created_at)
+        self.assertIsNotNone(lesson.updated_at)
+
+    def test_15_model_string_representation(self):
+        """15. Model string representation is useful."""
+        lesson = Lesson.objects.create(
+            course=self.course_a, title='Variables and Data Types', order=3,
+        )
+        self.assertEqual(str(lesson), 'Lesson 3: Variables and Data Types')
